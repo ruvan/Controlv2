@@ -20,6 +20,10 @@ public class RelayController extends Thread {
     InputStream relayInputStream;
     OutputStream relayOutputStream;
     
+    // Triangle / Relay
+    static Boolean[][] relayTable = new Boolean[19][8];
+    static Flower[][] flower = new Flower[3][12];
+    
     public RelayController(Controlv2 ctrl, String port, int baud, String programName) {
         this.ctrl = ctrl;
         try {
@@ -57,5 +61,26 @@ public class RelayController extends Thread {
         return serialPort;
     }
     
-    
+    /**
+     * This method should create all triangles big and small
+     * and populate the triangle / relay related tables.
+     */
+    public static void initialiseFlowers() {
+        for(int level = 0; level < 3; level++){
+            for(int flowerNumber = 0; flowerNumber < 12; flowerNumber++){
+                flower[level][flowerNumber] = new Flower(level, flowerNumber, relayTable);
+            }
+        }
+        
+        // initialise the rest of the relayTable
+        // PSU's and unsed 7th relay
+        for(int i=0; i<19; i++){
+            relayTable[i][0] = new Boolean(false);
+            relayTable[i][7] = new Boolean(false);
+        }
+        // bank 1
+        for(int i=1; i<7; i++){
+            relayTable[0][i] = new Boolean(false);
+        }
+    }
 }
