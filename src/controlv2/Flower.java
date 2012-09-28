@@ -10,27 +10,27 @@ package controlv2;
  */
 public class Flower {
     Petal[] petals = new Petal[3];
-    int[] upPetal = {4,2,6};
-    int[] downPetal = {5,7,3};
+    int[] upPetal = {5,7,3};
+    int[] downPetal = {4,2,6};
     
     public Flower(int level, int flowerNumber, Relay[][] relayTable) {
         // Check if level is even or odd
         if(level % 2 == 0) { // even level
             // Check if flowerNumber is even or odd
             if(flowerNumber % 2 == 0) { //even
-                // 4, 2, 6
+                // 5, 7, 3
                 setPetals(upPetal, level, flowerNumber, relayTable);
             }else{ // odd
-                // 5, 7,3
+                // 4, 2, 6
                 setPetals(downPetal, level, flowerNumber, relayTable);
             }
         }else{ // odd level
             // Check if flowerNumber is even or odd
             if(flowerNumber % 2 == 0) { //even
-                // 5, 7,3
+                // 4, 2, 6
                 setPetals(downPetal, level, flowerNumber, relayTable);
             }else{ // odd
-                // 4, 2, 6
+                // 5, 7, 3
                 setPetals(upPetal, level, flowerNumber, relayTable);
             }
         }
