@@ -11,10 +11,11 @@ package controlv2;
 public class Petal {
     
     int orientation;
-    Boolean state;
+    Relay relay;
     
-    public Petal(int orientation, Boolean state) {
+    public Petal(int orientation, Relay relay) {
         this.orientation = orientation;
-        this.state = state;
+        this.relay = relay;
     }
+    
 }

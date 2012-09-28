@@ -13,7 +13,7 @@ public class Flower {
     int[] upPetal = {4,2,6};
     int[] downPetal = {5,7,3};
     
-    public Flower(int level, int flowerNumber, Boolean[][] relayTable) {
+    public Flower(int level, int flowerNumber, Relay[][] relayTable) {
         // Check if level is even or odd
         if(level % 2 == 0) { // even level
             // Check if flowerNumber is even or odd
@@ -37,23 +37,23 @@ public class Flower {
         
     }
     
-    public void setPetals(int[] petalType, int level, int flowerNumber, Boolean[][] relayTable){
+    public void setPetals(int[] petalType, int level, int flowerNumber, Relay[][] relayTable){
         for(int i=0; i<3; i++) {
-            Boolean tempBool = new Boolean(false);
-            relayTable[petalType[i]+(level)*6-1][(flowerNumber/2)+1] = tempBool;
-            petals[i] = new Petal(petalType[i],tempBool);
+            Relay tempRelay = new Relay();
+            relayTable[petalType[i]+(level)*6-1][(flowerNumber/2)+1] = tempRelay;
+            petals[i] = new Petal(petalType[i],tempRelay);
         }
     }
     
     public void allOn(){
         for(int i=0; i<3; i++) {
-            petals[i].state = true;
+            petals[i].relay.setState(true);
         }
     }
        
     public void allOff(){
         for(int i=0; i<3; i++) {
-            petals[i].state = false;
+            petals[i].relay.setState(false);
         }
     }
     
