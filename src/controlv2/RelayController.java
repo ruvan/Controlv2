@@ -30,6 +30,7 @@ public class RelayController extends Thread {
             relaySerialPort = initializeSerial(port, baud, programName);
             relayInputStream = relaySerialPort.getInputStream();
             relayOutputStream = relaySerialPort.getOutputStream();
+            initializeFlowers();
         } catch (IOException ex) {
             System.out.println("Could not initialize relay components");
         }
@@ -37,7 +38,11 @@ public class RelayController extends Thread {
     }
     
     public void run() {
-        
+        turnOff();
+        turnOn();
+        while(true) {
+            runSequence();
+        }
     }
     
     /**
@@ -47,6 +52,7 @@ public class RelayController extends Thread {
     public SerialPort initializeSerial(String port, int baud, String programName) throws IOException {
         SerialPort serialPort;
         try {
+            
             CommPortIdentifier portId = CommPortIdentifier.getPortIdentifier(port);
             serialPort = (SerialPort) portId.open(programName, 5000);
             serialPort.setSerialPortParams(baud, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
@@ -65,7 +71,7 @@ public class RelayController extends Thread {
      * This method should create all triangles big and small
      * and populate the triangle / relay related tables.
      */
-    public static void initialiseFlowers() {
+    public static void initializeFlowers() {
         for(int level = 0; level < 3; level++){
             for(int flowerNumber = 0; flowerNumber < 12; flowerNumber++){
                 flowers[level][flowerNumber] = new Flower(level, flowerNumber, relayTable);
@@ -101,8 +107,6 @@ public class RelayController extends Thread {
     }
 
     public void runSequence() {
-        turnOn();
-        sleep(2000);
         System.out.println("Starting chase bloom");
         for(int level = 0; level < 3; level++){
             for(int flowerNumber = 0; flowerNumber < 12; flowerNumber++){
@@ -153,10 +157,15 @@ public class RelayController extends Thread {
                     command += Math.pow(2, relay);
                 }
             }
+            sleep(20);
             send(254);
+            sleep(20);
             send(140);
+            sleep(20);
             send(command);
+            sleep(20);
             send(bank + 1); // +1 because ProXR starts at 1
+            sleep(20);
         }
     }
 }
