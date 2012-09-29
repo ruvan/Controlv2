@@ -112,7 +112,7 @@ public class RelayController extends Thread {
             for(int flowerNumber = 0; flowerNumber < 12; flowerNumber++){
                 flowers[level][flowerNumber].allOn();
                 updateRelays();
-                sleep(2000);
+                //sleep(200);
                 flowers[level][flowerNumber].allOff();
                 updateRelays();
             }
@@ -157,15 +157,15 @@ public class RelayController extends Thread {
                     command += Math.pow(2, relay);
                 }
             }
-            sleep(20);
+            sleep(10);
             send(254);
-            sleep(20);
+            //sleep(2);
             send(140);
-            sleep(20);
+            //sleep(2);
             send(command);
-            sleep(20);
+            //sleep(2);
             send(bank + 1); // +1 because ProXR starts at 1
-            sleep(20);
+            sleep(8);
         }
     }
 }
