@@ -41,7 +41,8 @@ public class RelayController extends Thread {
         turnOff();
         turnOn();
         while(true) {
-            runSequence();
+            runDiagonalChase();
+            runFlowerChase();
         }
     }
     
@@ -52,7 +53,6 @@ public class RelayController extends Thread {
     public SerialPort initializeSerial(String port, int baud, String programName) throws IOException {
         SerialPort serialPort;
         try {
-            
             CommPortIdentifier portId = CommPortIdentifier.getPortIdentifier(port);
             serialPort = (SerialPort) portId.open(programName, 5000);
             serialPort.setSerialPortParams(baud, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
@@ -106,7 +106,52 @@ public class RelayController extends Thread {
         }
     }
 
-    public void runSequence() {
+    public void runDiagonalChase() {
+        System.out.println("Starting diagonal chase");
+        for(int level = 0; level < 3; level++) {
+            turnOnBank(level+1);
+            turnOnBank(6*(level+1));
+        }
+        sleep(2000);
+        for(int level = 0; level < 3; level++) {
+            turnOffBank(level+1);
+            turnOffBank(6*(level+1));
+        }
+        sleep(1000);
+        for(int level = 0; level < 3; level++) {
+            turnOnBank(2*(level+1));
+            turnOnBank(5*(level+1));
+        }
+        sleep(2000);
+        for(int level = 0; level < 3; level++) {
+            turnOffBank(2*(level+1));
+            turnOffBank(5*(level+1));
+        }
+        sleep(1000);
+        for(int level = 0; level < 3; level++) {
+            turnOnBank(3*(level+1));
+            turnOnBank(4*(level+1));
+        }
+        sleep(2000);
+        for(int level = 0; level < 3; level++) {
+            turnOffBank(3*(level+1));
+            turnOffBank(4*(level+1));
+        }
+    }
+    
+    public void turnOnBank(int bank) {
+        for(int relayNumber = 1; relayNumber < 8; relayNumber++) {
+            relayTable[bank][relayNumber].setState(true);
+        }
+    }
+    
+    public void turnOffBank(int bank) {
+        for(int relayNumber = 1; relayNumber < 8; relayNumber++) {
+            relayTable[bank][relayNumber].setState(false);
+        }
+    }
+    
+    public void runFlowerChase() {
         System.out.println("Starting chase bloom");
         for(int level = 0; level < 3; level++){
             for(int flowerNumber = 0; flowerNumber < 12; flowerNumber++){
@@ -116,6 +161,12 @@ public class RelayController extends Thread {
                 flowers[level][flowerNumber].allOff();
                 updateRelays();
             }
+        }
+    }
+    
+    public void clear() {
+        for (int bank = 1; bank < 19; bank++) {
+            turnOffBank(bank);
         }
     }
     
