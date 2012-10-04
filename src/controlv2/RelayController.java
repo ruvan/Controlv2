@@ -109,34 +109,40 @@ public class RelayController extends Thread {
     public void runDiagonalChase() {
         System.out.println("Starting diagonal chase");
         for(int level = 0; level < 3; level++) {
-            turnOnBank(level+1);
-            turnOnBank(6*(level+1));
+            turnOnBank(6*level+1);
+            turnOnBank(6*level+6);
         }
+        updateRelays();
         sleep(2000);
         for(int level = 0; level < 3; level++) {
-            turnOffBank(level+1);
-            turnOffBank(6*(level+1));
+            turnOffBank(6*level+1);
+            turnOffBank(6*level+6);
         }
+        updateRelays();
         sleep(1000);
         for(int level = 0; level < 3; level++) {
-            turnOnBank(2*(level+1));
-            turnOnBank(5*(level+1));
+            turnOnBank(6*level+5);
+            turnOnBank(6*level+2);
         }
+        updateRelays();
         sleep(2000);
         for(int level = 0; level < 3; level++) {
-            turnOffBank(2*(level+1));
-            turnOffBank(5*(level+1));
+            turnOffBank(6*level+5);
+            turnOffBank(6*level+2);
         }
+        updateRelays();
         sleep(1000);
         for(int level = 0; level < 3; level++) {
-            turnOnBank(3*(level+1));
-            turnOnBank(4*(level+1));
+            turnOnBank(6*level+4);
+            turnOnBank(6*level+3);
         }
+        updateRelays();
         sleep(2000);
         for(int level = 0; level < 3; level++) {
-            turnOffBank(3*(level+1));
-            turnOffBank(4*(level+1));
+            turnOffBank(6*level+4);
+            turnOffBank(6*level+3);
         }
+        updateRelays();
     }
     
     public void turnOnBank(int bank) {
