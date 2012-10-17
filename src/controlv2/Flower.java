@@ -57,6 +57,13 @@ public class Flower {
         }
     }
     
-    
+    public boolean isInBloom() {
+        for(int i=0; i<3; i++) {
+            if(!petals[i].relay.getState()) {
+                return false;
+            }
+        }
+        return true;
+    }
     
 }

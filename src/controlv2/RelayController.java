@@ -125,8 +125,8 @@ public class RelayController extends Thread {
     // Should activate a coloumn of flowers corresponding to the PIR sesor below it.
     // Should also test rain wind and light sensors.
     public void runInputTest() {
-        
         while(true) {
+            boolean triggered = false;
             try {
                 relayInputStream.skip(relayInputStream.available());
             } catch (IOException ex) {
@@ -138,19 +138,30 @@ public class RelayController extends Thread {
             byte[] bytes = new byte[12];
             int numberBytesRead = readLine(bytes);
             for (int i = 0; i < 6; i++) {
-                System.out.println("sensor " + i + " is " + Integer.toHexString(bytes[i]));
+                System.out.println("sensor " + i + " is " + bytes[i]);
                 if(bytes[i] < 0) {
-                    flowers[0][i*2+1].allOn();
-                    flowers[1][i*2+1].allOn();
-                    flowers[2][i*2+1].allOn();
+                    if(!flowers[0][i*2+1].isInBloom()) {
+                        triggered = true;
+                        flowers[0][i*2+1].allOn();
+                        flowers[1][i*2+1].allOn();
+                        flowers[2][i*2+1].allOn();
+                    }
                 } else {
-                    flowers[0][i*2+1].allOff();
-                    flowers[1][i*2+1].allOff();
-                    flowers[2][i*2+1].allOff();
-                }
+                    if(flowers[0][i*2+1].isInBloom()) {
+                        triggered = true;
+                        flowers[0][i*2+1].allOff();
+                        flowers[1][i*2+1].allOff();
+                        flowers[2][i*2+1].allOff();
+                    }
+                }   
             }
             updateRelays();
-            sleep(100);
+            if (triggered) {
+                System.out.println("Sleeping sensors for 7 seconds");
+                sleep(7000);
+            } else {
+                sleep(100);
+            }
         }
     }
 
