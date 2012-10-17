@@ -41,10 +41,11 @@ public class RelayController extends Thread {
     public void run() {
         turnOff();
         turnOn();
+        
         while(true) {
-            //runDiagonalChase();
-            //runFlowerChase();
-            //runAllOnOff();
+            runDiagonalChase();
+            runFlowerChase();
+            runAllOnOff();
             runInputTest();
         }
     }
@@ -191,6 +192,7 @@ public class RelayController extends Thread {
         }
 //        updateRelays();
 //        sleep(sleepTime);
+        // horizontals
         for(int level = 0; level < 3; level++) {
             turnOnBank(6*level+4);
             turnOnBank(6*level+3);
