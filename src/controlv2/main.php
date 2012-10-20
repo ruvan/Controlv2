@@ -3,6 +3,8 @@
 session_start();
 if (!isset($_SESSION['authenticated']) || $_SESSION['authenticated'] != true) {
     header('Location: index.php');
+} else {
+    echo "<!DOCTYPE html><html><body>";
 }
 
 // Rewrite the config file with given values
@@ -17,17 +19,33 @@ if (isset($_POST['Config-Form'])) {
     }
 }
 
+// Parse relay form and send to command.txt
+if (isset($_POST['Relay-Form'])) {
+    $relayString = "";
+    foreach ($_POST as $relayNumber => $relayArray) {
+        if (is_array($relayArray)) {
+            $relayValue = 0;
+            foreach ($relayArray as $relayValueElement) {
+                $relayValue+=$relayValueElement;
+            }
+            $relayString.= "$relayNumber-$relayValue,";
+        }
+    }
+    $relayString = "r=" . substr_replace($relayString,"",-1);
+    send_command($relayString);
+}
+
 // Read and display config file
 if ($_SESSION['userlevel'] == 1) {
     $config = fopen("config.properties", "r") or exit("Unable to open config file!");
     $lastModTime = explode(" ", fgets($config));
-    echo "<table border='1'>";
     echo "<form action='main.php' method='post'> <br> \n";
+    echo "<table border='1'>\n";
     while (!feof($config)) {
         $line = explode("=", fgets($config));
         echo "<tr> <td> $line[0] </td> <td> <input type='text' name='$line[0]' value='$line[1]' /> </td> </tr> \n";
     }
-    echo "<tr> <td> Last mod: $lastModTime[1] $lastModTime[2] $lastModTime[3]</td> <td> <input type='submit' name='Config-Form' value='Submit' /> </td>  </tr> \n </table>";
+    echo "<tr> <td> Last mod: $lastModTime[1] $lastModTime[2] $lastModTime[3]</td> <td> <input type='submit' name='Config-Form' value='Submit' /> </td>  </tr> \n </table> </form>";
     fclose($config);
 }
 
@@ -44,13 +62,13 @@ if ($_SESSION['userlevel'] == 1) {
     while (!feof($status)) {
         $line = fgets($status);
         if (substr_compare($line, "#", 0, 1) == 0) { // Have a comment
-            echo $line . "</br>";
+            //echo $line . "<br>";
         } else { // Have a property
             $property = explode("=", $line);
             
             if (substr_compare($property[0], "b", 0, 1) == 0) { // Have got a relay bank
                 if(!$relayTableStarted) {
-                    echo "<table border=\"1\"> \n <form name=\"relay_set\" action=\"main.php\" method=\"post\">\n";
+                    echo "<form action='main.php' method='post'>\n <table border='1'> \n ";
                     echo "<tr><td>Bank #</td><td>Bank Status</td></tr>\n";
                     $relayTableStarted=true;
                 }
@@ -61,19 +79,19 @@ if ($_SESSION['userlevel'] == 1) {
                 $sizeOf_bankValue = sizeof($bankValue);
                 for ($i=0; $i<$sizeOf_bankValue; $i++) { // For those relays we do know the value of
                     if (strcmp($bankValue[$i], "1") == 0) {
-                        echo "<input type=\"checkbox\" checked=\"yes\" value=\"1\" name=\"$bankNumber" . "[]\">  ";
+                        echo "<input type=\"checkbox\" checked=\"yes\" value='" . pow(2,$i) . "' name=\"$bankNumber" . "[]\">  ";
                     } else {
-                        echo "<input type=\"checkbox\" value=\"1\" name=\"$bankNumber" ."[]\">  ";
+                        echo "<input type=\"checkbox\" value='" . pow(2,$i) . "' name=\"$bankNumber" ."[]\">  ";
                     }
                 }
                 for ($i=0; $i<8-$sizeOf_bankValue; $i++) {
-                    echo "<input type=\"checkbox\" value=\"1\" name=\"$bankNumber" ."[]\">  ";
+                    echo "<input type=\"checkbox\" value='" . pow(2,$i+$sizeOf_bankValue) . "' name=\"$bankNumber" ."[]\">  ";
                 }
                 echo "</td></tr>\n";
                 
             } elseif (substr_compare($property[0], "s", 0, 1) == 0)  { // Have got a sensor value
                 if($relayTableStarted && !$relayTableFinished) {
-                    echo "<tr><td>Manual override</td><td><input type=\"submit\" value=\"Set\"></td></tr> \n </table> \n";
+                    echo "<tr><td>Manual override</td><td><input name='Relay-Form' type='submit' value='Set'></td></tr> \n </table> </form> \n";
                     $relayTableFinished=true;
                 }
                 if(!$sensorTableStarted) {
@@ -110,6 +128,17 @@ if ($_SESSION['userlevel'] == 1) {
     
     // Finish misc table
     echo "</table> \n";
-    
+    fclose($status);
 }
+
+
+echo "</body></html>";
+
+function send_command($command) {
+    $commandFile = fopen("command.txt", "w") or exit("Unable to open conmmand file!");
+    fwrite($commandFile, $command);
+    fclose($commandFile);
+    sleep(2);
+}
+
 ?>
