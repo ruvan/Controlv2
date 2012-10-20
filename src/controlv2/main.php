@@ -73,7 +73,7 @@ if ($_SESSION['userlevel'] == 1) {
                     $relayTableStarted=true;
                 }
                 $bankNumber = intval(substr($property[0], 2));
-                $bankValue = strrev(substr_replace($property[1],"",-1)); // reverse the string so we start with the first relay when we read it
+                $bankValue = substr_replace($property[1],"",-1); // remove the newline character
                 echo "<tr><td>$bankNumber</td><td>";
                 $bankValue = str_split($bankValue);
                 $sizeOf_bankValue = sizeof($bankValue);
@@ -135,7 +135,7 @@ if ($_SESSION['userlevel'] == 1) {
 echo "</body></html>";
 
 function send_command($command) {
-    $commandFile = fopen("command.txt", "w") or exit("Unable to open conmmand file!");
+    $commandFile = fopen("command.txt", "a") or exit("Unable to open conmmand file!");
     fwrite($commandFile, $command);
     fclose($commandFile);
     sleep(2);

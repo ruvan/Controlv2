@@ -21,6 +21,7 @@ public class Controlv2 {
     static Controlv2 ctrl;
     static Boolean relay = false;
     static RelayController rctrl;
+    static String statusFileLoc;
     Boolean debug = true;
 
     /**
@@ -33,6 +34,8 @@ public class Controlv2 {
         while (true) {
             try {
                 Thread.sleep(100);
+                updateStatus();
+                
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }
@@ -50,6 +53,7 @@ public class Controlv2 {
             prop.load(propertiesFile);
 
             programName = prop.getProperty("ProgramName");
+            statusFileLoc = prop.getProperty("statusFileLoc");
 
 //            // MIDI vars
 //            if (prop.getProperty("MIDI").equals("true")) {
@@ -75,5 +79,45 @@ public class Controlv2 {
             ex.printStackTrace();
         }
     }
+
+    static public void updateStatus() {
+        Properties status = new Properties();
+
+        try {
+            // load the status file
+            FileInputStream statusFile = new FileInputStream(statusFileLoc);
+            status.load(statusFile);
+
+            // Update relay status
+            for (int bank = 0; bank < 19; bank++) {
+                String command = "";
+                for (int relay = 0; relay < 8; relay++) {
+                    if (rctrl.relayTable[bank][relay].getState()) {
+                        command += "1";
+                    } else {
+                        command += "0";
+                    }
+                }
+                // set the status of the bank in the status file
+                status.setProperty("b," + Integer.toString(bank + 1), command);
+            }
+            
+
+            // close the status file
+            statusFile.close();
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+    
+    static public void sleep(int time) {
+        try {
+                Thread.sleep(time);
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+    }
+     
 
 }

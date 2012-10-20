@@ -1,30 +1,29 @@
-
 package controlv2;
 
 import java.io.IOException;
 import gnu.io.RXTXCommDriver;
 import java.io.*;
 import gnu.io.*;
+import java.util.Properties;
 
 /**
  *
  * @author Tyrone
  */
 public class RelayController extends Thread {
-    
+
     /**
-     *  Class Variables
+     * Class Variables
      */
     Controlv2 ctrl;
     SerialPort relaySerialPort;
     InputStream relayInputStream;
     OutputStream relayOutputStream;
     int sleepTime = 10000;
-    
     // Triangle / Relay
     static Relay[][] relayTable = new Relay[19][8];
     static Flower[][] flowers = new Flower[3][12];
-    
+
     public RelayController(Controlv2 ctrl, String port, int baud, String programName) {
         this.ctrl = ctrl;
         try {
@@ -35,21 +34,21 @@ public class RelayController extends Thread {
         } catch (IOException ex) {
             System.out.println("Could not initialize relay components");
         }
-        
+
     }
-    
+
     public void run() {
         turnOff();
         turnOn();
-        
-        while(true) {
+
+        while (true) {
             runDiagonalChase();
             runFlowerChase();
             runAllOnOff();
             runInputTest();
         }
     }
-    
+
     /**
      * Open a serial connection note: assumes databits=8, stopbits=1, no parity
      * and no flow control.
@@ -70,30 +69,30 @@ public class RelayController extends Thread {
         }
         return serialPort;
     }
-    
+
     /**
-     * This method should create all triangles big and small
-     * and populate the triangle / relay related tables.
+     * This method should create all triangles big and small and populate the
+     * triangle / relay related tables.
      */
     public static void initializeFlowers() {
-        for(int level = 0; level < 3; level++){
-            for(int flowerNumber = 0; flowerNumber < 12; flowerNumber++){
+        for (int level = 0; level < 3; level++) {
+            for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
                 flowers[level][flowerNumber] = new Flower(level, flowerNumber, relayTable);
             }
         }
-        
+
         // initialise the rest of the relayTable
         // PSU's and unsed 7th relay
-        for(int i=0; i<19; i++){
+        for (int i = 0; i < 19; i++) {
             relayTable[i][0] = new Relay();
             relayTable[i][7] = new Relay();
         }
         // bank 1
-        for(int i=1; i<7; i++){
+        for (int i = 1; i < 7; i++) {
             relayTable[0][i] = new Relay();
         }
     }
-    
+
     public void send(int i) {
         try {
             relayOutputStream.write(i);
@@ -101,19 +100,19 @@ public class RelayController extends Thread {
             ex.getMessage();
         }
     }
-    
+
     public int readLine(byte[] bytes) {
         int numberBytesRead = 0;
         try {
             int a = relayInputStream.available();
             numberBytesRead = relayInputStream.read(bytes);
-            
+
         } catch (IOException ex) {
             ex.getMessage();
         }
         return numberBytesRead;
     }
-    
+
     public void sleep(int time) {
         try {
             Thread.currentThread().sleep(time);
@@ -121,12 +120,11 @@ public class RelayController extends Thread {
             ex.printStackTrace();
         }
     }
-    
-    
+
     // Should activate a coloumn of flowers corresponding to the PIR sesor below it.
     // Should also test rain wind and light sensors.
     public void runInputTest() {
-        while(true) {
+        while (true) {
             boolean triggered = false;
             try {
                 relayInputStream.skip(relayInputStream.available());
@@ -140,21 +138,21 @@ public class RelayController extends Thread {
             int numberBytesRead = readLine(bytes);
             for (int i = 0; i < 6; i++) {
                 System.out.println("sensor " + i + " is " + bytes[i]);
-                if(bytes[i] < 0) {
-                    if(!flowers[0][i*2+1].isInBloom()) {
+                if (bytes[i] < 0) {
+                    if (!flowers[0][i * 2 + 1].isInBloom()) {
                         triggered = true;
-                        flowers[0][i*2+1].allOn();
-                        flowers[1][i*2+1].allOn();
-                        flowers[2][i*2+1].allOn();
+                        flowers[0][i * 2 + 1].allOn();
+                        flowers[1][i * 2 + 1].allOn();
+                        flowers[2][i * 2 + 1].allOn();
                     }
                 } else {
-                    if(flowers[0][i*2+1].isInBloom()) {
+                    if (flowers[0][i * 2 + 1].isInBloom()) {
                         triggered = true;
-                        flowers[0][i*2+1].allOff();
-                        flowers[1][i*2+1].allOff();
-                        flowers[2][i*2+1].allOff();
+                        flowers[0][i * 2 + 1].allOff();
+                        flowers[1][i * 2 + 1].allOff();
+                        flowers[2][i * 2 + 1].allOff();
                     }
-                }   
+                }
             }
             updateRelays();
             if (triggered) {
@@ -168,61 +166,61 @@ public class RelayController extends Thread {
 
     public void runDiagonalChase() {
         System.out.println("Starting diagonal chase");
-        for(int level = 0; level < 3; level++) {
-            turnOnBank(6*level+1);
-            turnOnBank(6*level+6);
+        for (int level = 0; level < 3; level++) {
+            turnOnBank(6 * level + 1);
+            turnOnBank(6 * level + 6);
         }
         updateRelays();
         sleep(sleepTime);
-        for(int level = 0; level < 3; level++) {
-            turnOffBank(6*level+1);
-            turnOffBank(6*level+6);
+        for (int level = 0; level < 3; level++) {
+            turnOffBank(6 * level + 1);
+            turnOffBank(6 * level + 6);
         }
 //        updateRelays();
 //        sleep(sleepTime);
-        for(int level = 0; level < 3; level++) {
-            turnOnBank(6*level+5);
-            turnOnBank(6*level+2);
+        for (int level = 0; level < 3; level++) {
+            turnOnBank(6 * level + 5);
+            turnOnBank(6 * level + 2);
         }
         updateRelays();
         sleep(sleepTime);
-        for(int level = 0; level < 3; level++) {
-            turnOffBank(6*level+5);
-            turnOffBank(6*level+2);
+        for (int level = 0; level < 3; level++) {
+            turnOffBank(6 * level + 5);
+            turnOffBank(6 * level + 2);
         }
 //        updateRelays();
 //        sleep(sleepTime);
         // horizontals
-        for(int level = 0; level < 3; level++) {
-            turnOnBank(6*level+4);
-            turnOnBank(6*level+3);
+        for (int level = 0; level < 3; level++) {
+            turnOnBank(6 * level + 4);
+            turnOnBank(6 * level + 3);
         }
         updateRelays();
         sleep(sleepTime);
-        for(int level = 0; level < 3; level++) {
-            turnOffBank(6*level+4);
-            turnOffBank(6*level+3);
+        for (int level = 0; level < 3; level++) {
+            turnOffBank(6 * level + 4);
+            turnOffBank(6 * level + 3);
         }
         updateRelays();
         sleep(sleepTime);
     }
-    
+
     public void turnOnBank(int bank) {
-        for(int relayNumber = 1; relayNumber < 8; relayNumber++) {
+        for (int relayNumber = 1; relayNumber < 8; relayNumber++) {
             relayTable[bank][relayNumber].setState(true);
         }
     }
-    
+
     public void turnOffBank(int bank) {
-        for(int relayNumber = 1; relayNumber < 8; relayNumber++) {
+        for (int relayNumber = 1; relayNumber < 8; relayNumber++) {
             relayTable[bank][relayNumber].setState(false);
         }
     }
-    
+
     public void runFlowerChase() {
         System.out.println("Starting chase bloom");
-        for(int level = 0; level < 3; level++){
-            for(int flowerNumber = 0; flowerNumber < 12; flowerNumber++){
+        for (int level = 0; level < 3; level++) {
+            for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
                 flowers[level][flowerNumber].allOn();
                 updateRelays();
                 sleep(5000);
@@ -232,38 +230,38 @@ public class RelayController extends Thread {
             }
         }
     }
-    
+
     public void runAllOnOff() {
-        for(int level = 0; level < 3; level++){
-            for(int flowerNumber = 0; flowerNumber < 12; flowerNumber++){
+        for (int level = 0; level < 3; level++) {
+            for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
                 flowers[level][flowerNumber].allOff();
             }
         }
         updateRelays();
         sleep(sleepTime);
         System.out.println("Starting all on off");
-        for(int level = 0; level < 3; level++){
-            for(int flowerNumber = 0; flowerNumber < 12; flowerNumber++){
+        for (int level = 0; level < 3; level++) {
+            for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
                 flowers[level][flowerNumber].allOn();
             }
         }
         updateRelays();
         sleep(sleepTime);
-        for(int level = 0; level < 3; level++){
-            for(int flowerNumber = 0; flowerNumber < 12; flowerNumber++){
+        for (int level = 0; level < 3; level++) {
+            for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
                 flowers[level][flowerNumber].allOff();
             }
         }
         updateRelays();
         sleep(sleepTime);
     }
-    
+
     public void clear() {
         for (int bank = 1; bank < 19; bank++) {
             turnOffBank(bank);
         }
     }
-    
+
     public void turnOff() {
         //pull in all actuators
         for (int bank = 1; bank < 19; bank++) {
