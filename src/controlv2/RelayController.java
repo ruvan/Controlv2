@@ -225,7 +225,7 @@ public class RelayController extends Thread {
             for(int flowerNumber = 0; flowerNumber < 12; flowerNumber++){
                 flowers[level][flowerNumber].allOn();
                 updateRelays();
-                sleep(5000);
+                sleep(1000);
 //                flowers[level][flowerNumber].allOff();
 //                updateRelays();
 //                sleep(sleepTime);
