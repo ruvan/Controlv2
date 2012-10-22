@@ -124,8 +124,10 @@ public class Controlv2 {
             
             // Update sensor status
             System.out.println("updating sensor status now");
-            for (int i=0; i<rctrl.sensors.length; i++) {
+            System.out.println("sensor array size: " + Integer.toString(rctrl.sensors[1].length));
+            for (int i=0; i<rctrl.sensors[1].length; i++) {
                 Byte temp = new Byte(rctrl.sensors[0][i]);
+                System.out.println("sensor " + Integer.toString(i) + " is " + temp.toString());
                 if(i<6) {
                     status.setProperty("s,m," + Integer.toString(i + 1), temp.toString());
                 } else if(i<8) {

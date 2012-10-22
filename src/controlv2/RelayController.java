@@ -23,7 +23,7 @@ public class RelayController extends Thread {
     // Triangle / Relay
     static Relay[][] relayTable = new Relay[19][8];
     static Flower[][] flowers = new Flower[3][12];
-    byte[][] sensors = new byte[2][12];
+    byte[][] sensors = new byte[2][16];
 
     public RelayController(Controlv2 ctrl, String port, int baud, String programName) {
         this.ctrl = ctrl;
@@ -316,6 +316,7 @@ public class RelayController extends Thread {
     }
     
     public void updateSensors() {
+        while(true) {
         try {
             relayInputStream.skip(relayInputStream.available());
         } catch (IOException ex) {
@@ -323,10 +324,14 @@ public class RelayController extends Thread {
         }
         send(254);
         send(192);
-        sleep(500);
-        byte[] bytes = new byte[12];
+        sleep(1000);
+        byte[] bytes = new byte[sensors[1].length];
         int numberBytesRead = readLine(bytes);
-        for(int i=0; i<12; i++) {
+        System.out.println("number of bytes read: " + Integer.toString(numberBytesRead));
+        for(int i=0; i<bytes.length; i++) {
+            Byte tempByte = new Byte(bytes[i]);
+            int temp = tempByte.intValue();
+            System.out.println(Integer.toString(i) + " is: " + Integer.toString(temp));
             if(Math.abs(sensors[0][i]-bytes[i])<6) {
                 sensors[1][i]=0;
                 sensors[0][i]=bytes[i];
@@ -335,7 +340,8 @@ public class RelayController extends Thread {
                 sensors[0][i]=bytes[i];
             }
         }
-        sleep(500);
+        sleep(1000); 
+        }
     }
     
     /**
