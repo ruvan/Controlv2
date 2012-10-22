@@ -4,7 +4,7 @@
  */
 package controlv2;
 
-import java.util.Properties;
+import java.util.*;
 import java.io.*;
 
 /**
@@ -32,13 +32,10 @@ public class Controlv2 {
         loadConfig(args[0]);
         
         while (true) {
-            try {
-                Thread.sleep(100);
+            
+                sleep(3000);
                 updateStatus();
-                
-            } catch (InterruptedException ex) {
-                ex.printStackTrace();
-            }
+           
         }
         
     }
@@ -55,7 +52,7 @@ public class Controlv2 {
             programName = prop.getProperty("ProgramName");
             statusFileLoc = prop.getProperty("statusFileLoc");
             commandFileLoc = prop.getProperty("commandFileLoc");
-
+            System.out.println(statusFileLoc);
 //            // MIDI vars
 //            if (prop.getProperty("MIDI").equals("true")) {
 //                initializeMidi(prop.getProperty("MIDIDeviceName"));
@@ -106,10 +103,10 @@ public class Controlv2 {
 
         try {
             // load the status file
-            FileInputStream statusFile = new FileInputStream(statusFileLoc);
-            status.load(statusFile);
-
+            FileInputStream statusFI = new FileInputStream(statusFileLoc);
+            status.load(statusFI);
             // Update relay status
+            System.out.println("updating relay status now");
             for (int bank = 0; bank < 19; bank++) {
                 String command = "";
                 for (int relay = 0; relay < 8; relay++) {
@@ -120,10 +117,13 @@ public class Controlv2 {
                     }
                 }
                 // set the status of the bank in the status file
+                System.out.println(status.getProperty("b," + Integer.toString(bank + 1)));
+                System.out.println("updating relay b," + Integer.toString(bank + 1) + " to " + command);
                 status.setProperty("b," + Integer.toString(bank + 1), command);
             }
             
             // Update sensor status
+            System.out.println("updating sensor status now");
             for (int i=0; i<rctrl.sensors.length; i++) {
                 Byte temp = new Byte(rctrl.sensors[0][i]);
                 if(i<6) {
@@ -138,8 +138,12 @@ public class Controlv2 {
             }
 
             // close the status file
-            statusFile.close();
-
+            statusFI.close();
+            FileOutputStream statusFO = new FileOutputStream(statusFileLoc);
+            status.store(statusFO, null);
+            statusFO.close();
+//            System.exit(0);
+            
         } catch (IOException ex) {
             ex.printStackTrace();
         }

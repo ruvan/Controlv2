@@ -43,10 +43,12 @@ public class RelayController extends Thread {
         turnOn();
 
         while (true) {
-            runDiagonalChase();
-            runFlowerChase();
-            runAllOnOff();
-            runInputTest();
+//            runDiagonalChase();
+//            runFlowerChase();
+//            runAllOnOff();
+//            runInputTest();
+            
+           updateSensors();
         }
     }
 
@@ -333,6 +335,7 @@ public class RelayController extends Thread {
                 sensors[0][i]=bytes[i];
             }
         }
+        sleep(500);
     }
     
     /**
