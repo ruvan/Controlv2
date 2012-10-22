@@ -23,6 +23,7 @@ public class RelayController extends Thread {
     // Triangle / Relay
     static Relay[][] relayTable = new Relay[19][8];
     static Flower[][] flowers = new Flower[3][12];
+    byte[][] sensors = new byte[2][12];
 
     public RelayController(Controlv2 ctrl, String port, int baud, String programName) {
         this.ctrl = ctrl;
@@ -311,4 +312,42 @@ public class RelayController extends Thread {
             sleep(8);
         }
     }
+    
+    public void updateSensors() {
+        try {
+            relayInputStream.skip(relayInputStream.available());
+        } catch (IOException ex) {
+            ex.getMessage();
+        }
+        send(254);
+        send(192);
+        sleep(500);
+        byte[] bytes = new byte[12];
+        int numberBytesRead = readLine(bytes);
+        for(int i=0; i<12; i++) {
+            if(Math.abs(sensors[0][i]-bytes[i])<6) {
+                sensors[1][i]=0;
+                sensors[0][i]=bytes[i];
+            } else {
+                sensors[1][i]=1;
+                sensors[0][i]=bytes[i];
+            }
+        }
+    }
+    
+    /**
+     * When override is called totem should stop any sequence and run the override command.
+     * 
+     * @param input 
+     */
+    public void override(String input) {
+        clear();
+        String[] overrideCommands = input.split(",");
+        for(int i=0; i<overrideCommands.length; i++) {
+            String[] command = overrideCommands[i].split("-");
+            int bank = Integer.parseInt(command[0]);
+            String binaryCommand = Integer.toBinaryString(Integer.parseInt(command[0]));
+        }
+    }
+    
 }

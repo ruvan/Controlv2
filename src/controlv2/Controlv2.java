@@ -4,9 +4,8 @@
  */
 package controlv2;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.Properties;
+import java.io.*;
 
 /**
  *
@@ -22,6 +21,7 @@ public class Controlv2 {
     static Boolean relay = false;
     static RelayController rctrl;
     static String statusFileLoc;
+    static String commandFileLoc;
     Boolean debug = true;
 
     /**
@@ -54,6 +54,7 @@ public class Controlv2 {
 
             programName = prop.getProperty("ProgramName");
             statusFileLoc = prop.getProperty("statusFileLoc");
+            commandFileLoc = prop.getProperty("commandFileLoc");
 
 //            // MIDI vars
 //            if (prop.getProperty("MIDI").equals("true")) {
@@ -75,6 +76,26 @@ public class Controlv2 {
             // close the properties file
             propertiesFile.close();
 
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+    
+    static void readCommandFile() {
+        try {
+            // load the status file
+            FileInputStream commandFile = new FileInputStream(commandFileLoc);
+            DataInputStream in = new DataInputStream(commandFile);
+            BufferedReader commandReader = new BufferedReader(new InputStreamReader(in));
+            String commandLine;
+            
+            while((commandLine = commandReader.readLine()) != null) {
+                String[] split = commandLine.split("=");
+                if(split[0].equals("r")) { // we have a relay override command
+                    rctrl.override(split[1]);
+                }
+            }
+            
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -102,6 +123,19 @@ public class Controlv2 {
                 status.setProperty("b," + Integer.toString(bank + 1), command);
             }
             
+            // Update sensor status
+            for (int i=0; i<rctrl.sensors.length; i++) {
+                Byte temp = new Byte(rctrl.sensors[0][i]);
+                if(i<6) {
+                    status.setProperty("s,m," + Integer.toString(i + 1), temp.toString());
+                } else if(i<8) {
+                    status.setProperty("s,w," + Integer.toString(i - 5), temp.toString());
+                } else if(i==8) {
+                    status.setProperty("s,r", temp.toString());
+                } else {
+                    status.setProperty("s,l", temp.toString());
+                }
+            }
 
             // close the status file
             statusFile.close();
