@@ -34,8 +34,7 @@ public class RelayController extends Thread {
             initializeFlowers();
         } catch (IOException ex) {
             System.out.println("Could not initialize relay components");
-        }
-
+        }    
     }
 
     public void run() {
@@ -179,8 +178,7 @@ public class RelayController extends Thread {
             turnOffBank(6 * level + 1);
             turnOffBank(6 * level + 6);
         }
-//        updateRelays();
-//        sleep(sleepTime);
+
         for (int level = 0; level < 3; level++) {
             turnOnBank(6 * level + 5);
             turnOnBank(6 * level + 2);
@@ -191,8 +189,7 @@ public class RelayController extends Thread {
             turnOffBank(6 * level + 5);
             turnOffBank(6 * level + 2);
         }
-//        updateRelays();
-//        sleep(sleepTime);
+
         // horizontals
         for (int level = 0; level < 3; level++) {
             turnOnBank(6 * level + 4);
@@ -227,9 +224,6 @@ public class RelayController extends Thread {
                 flowers[level][flowerNumber].allOn();
                 updateRelays();
                 sleep(1000);
-//                flowers[level][flowerNumber].allOff();
-//                updateRelays();
-//                sleep(sleepTime);
             }
         }
     }
@@ -305,11 +299,8 @@ public class RelayController extends Thread {
             }
             sleep(10);
             send(254);
-            //sleep(2);
             send(140);
-            //sleep(2);
             send(command);
-            //sleep(2);
             send(bank + 1); // +1 because ProXR starts at 1
             sleep(8);
         }
@@ -327,7 +318,6 @@ public class RelayController extends Thread {
         sleep(1000);
         byte[] bytes = new byte[sensors[1].length];
         int numberBytesRead = readLine(bytes);
-        System.out.println("number of bytes read: " + Integer.toString(numberBytesRead));
         for(int i=0; i<bytes.length; i++) {
             Byte tempByte = new Byte(bytes[i]);
             int temp = tempByte.intValue();

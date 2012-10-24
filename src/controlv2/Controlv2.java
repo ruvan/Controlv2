@@ -23,36 +23,53 @@ public class Controlv2 {
     static String statusFileLoc;
     static String commandFileLoc;
     Boolean debug = true;
+    static long commandFileModTime;
 
+    /**
+     * Totem Behavioural Variables
+     */
+    static String mood;
+    static int activityLevel;
+    static int startOfDay;
+    
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
         ctrl = new Controlv2();
         loadConfig(args[0]);
+        commandFileModTime = new File(commandFileLoc).lastModified();
+        Calendar calendar = Calendar.getInstance();
         
-        while (true) {
-            
-                sleep(3000);
+        int currentSecond = calendar.get(Calendar.SECOND);
+        
+        while(true) {
+            if(calendar.get(Calendar.SECOND)>currentSecond) {
+                currentSecond=calendar.get(Calendar.SECOND);
+                readCommandFile();
                 updateStatus();
-           
+            }
         }
-        
     }
-
+    
     private static void loadConfig(String configPath) {
         Properties prop = new Properties();
 
         try {
             // load the properties file
-            //FileInputStream propertiesFile = new FileInputStream("C:\\Control\\src\\control\\config.properties");
             FileInputStream propertiesFile = new FileInputStream(configPath);
             prop.load(propertiesFile);
 
             programName = prop.getProperty("ProgramName");
             statusFileLoc = prop.getProperty("statusFileLoc");
             commandFileLoc = prop.getProperty("commandFileLoc");
-            System.out.println(statusFileLoc);
+            
+            // Load behavioural vars from status file;
+            mood = prop.getProperty("initialMood");
+            activityLevel = Integer.parseInt(prop.getProperty("initialActivityLevel"));
+            startOfDay = Integer.parseInt(prop.getProperty("startOfDay"));  // BEWARE of parseInt dropping the leading 0 from 0500
+            
+            
 //            // MIDI vars
 //            if (prop.getProperty("MIDI").equals("true")) {
 //                initializeMidi(prop.getProperty("MIDIDeviceName"));
@@ -68,8 +85,6 @@ public class Controlv2 {
                 rctrl.start();
             }
 
-
-
             // close the properties file
             propertiesFile.close();
 
@@ -79,22 +94,31 @@ public class Controlv2 {
     }
     
     static void readCommandFile() {
-        try {
-            // load the status file
-            FileInputStream commandFile = new FileInputStream(commandFileLoc);
-            DataInputStream in = new DataInputStream(commandFile);
-            BufferedReader commandReader = new BufferedReader(new InputStreamReader(in));
-            String commandLine;
-            
-            while((commandLine = commandReader.readLine()) != null) {
-                String[] split = commandLine.split("=");
-                if(split[0].equals("r")) { // we have a relay override command
-                    rctrl.override(split[1]);
+
+        // Get the last modified time
+        long modifiedTime = new File(commandFileLoc).lastModified();
+        
+        if (modifiedTime > commandFileModTime) {
+            commandFileModTime = modifiedTime;
+            try {
+                // load the status file
+                FileInputStream commandFile = new FileInputStream(commandFileLoc);
+                DataInputStream in = new DataInputStream(commandFile);
+                BufferedReader commandReader = new BufferedReader(new InputStreamReader(in));
+                String commandLine;
+
+                while ((commandLine = commandReader.readLine()) != null) {
+                    String[] split = commandLine.split("=");
+                    if (split[0].equals("r")) { // we have a relay override command
+                        rctrl.override(split[1]);
+                    }
                 }
+
+                commandFile.close();
+
+            } catch (IOException ex) {
+                ex.printStackTrace();
             }
-            
-        } catch (IOException ex) {
-            ex.printStackTrace();
         }
     }
 
@@ -105,6 +129,11 @@ public class Controlv2 {
             // load the status file
             FileInputStream statusFI = new FileInputStream(statusFileLoc);
             status.load(statusFI);
+          
+            // Update misc. fields
+            status.setProperty("activityLevel", Integer.toString(activityLevel));
+            status.setProperty("mood", mood);
+            
             // Update relay status
             System.out.println("updating relay status now");
             for (int bank = 0; bank < 19; bank++) {
@@ -144,7 +173,6 @@ public class Controlv2 {
             FileOutputStream statusFO = new FileOutputStream(statusFileLoc);
             status.store(statusFO, null);
             statusFO.close();
-//            System.exit(0);
             
         } catch (IOException ex) {
             ex.printStackTrace();
