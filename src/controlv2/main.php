@@ -19,7 +19,7 @@ if (!isset($_SESSION['authenticated']) || $_SESSION['authenticated'] != true) {
         }
         #relayDiv {
             position:absolute;
-            top:20%;
+            top:25%;
             left:60%;
         }
         </style>
@@ -50,7 +50,13 @@ if (isset($_POST['Relay-Form'])) {
             $relayString.= "$relayNumber-$relayValue,";
         }
     }
-    $relayString = "r=" . substr_replace($relayString,"",-1);
+    $relayString = "r,o=" . substr_replace($relayString,"",-1);
+    send_command($relayString);
+}
+
+// Add a sequence 
+if (isset($_POST['Sequence-Form'])) {
+    $relayString = "r,a=" . $_POST['sequence'];
     send_command($relayString);
 }
 
@@ -70,13 +76,8 @@ if ($_SESSION['userlevel'] == 1) {
 
 // Read and display status file
 if ($_SESSION['userlevel'] == 1) {
-//    
-//    $relayTableStarted=false;
-//    $relayTableFinished=false;
-//    $sensorTableStarted=false;
-//    $sensorTableFinished=false;
-//    $miscTableStarted=false;
-//    
+
+    
     // Build relay table
     $status = fopen("status.properties", "r") or exit("Unable to open config file!");
     echo "<div id='relayDiv'><form action='main.php' method='post'>\n <table border='1'> \n ";
@@ -158,7 +159,22 @@ if ($_SESSION['userlevel'] == 1) {
             }
         }
         } //end of status file
-        echo "</table> </div> \n";
+        
+        // build sequence select form
+        echo "<tr>
+            <form action='main.php' method='post'> \n 
+            <td>
+            <select name='sequence'>
+            <option value='runDiagonalChase'>Diagonal Chase</option>
+            <option value='runAllOnOff'>All On Off</option>
+            </select>
+            </td>
+            <td>
+            <input name='Sequence-Form' type='submit' value='submit'>
+            </td>
+            </form>
+            </tr>
+            </table> </div> \n";
         fclose($status);
 
 }

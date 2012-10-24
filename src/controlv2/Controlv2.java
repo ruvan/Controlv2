@@ -125,8 +125,12 @@ public class Controlv2 {
 
                 while ((commandLine = commandReader.readLine()) != null) {
                     String[] split = commandLine.split("=");
-                    if (split[0].equals("r")) { // we have a relay override command
-                        rctrl.override(split[1]);
+                    if (split[0].charAt(0) == 'r') { // we have a relay command
+                        if (split[0].charAt(2) == 'o') { // we have a relay override command
+                            rctrl.override(split[1]);
+                        } else if (split[0].charAt(2) == 'a') { // we have a kinetic sequence to queue
+                            rctrl.kineticSequenceQueue.add(new KineticSequence(split[1], true));
+                        }
                     }
                 }
 
@@ -149,6 +153,12 @@ public class Controlv2 {
             // Update misc. fields
             status.setProperty("activityLevel", Integer.toString(activityLevel));
             status.setProperty("mood", mood);
+            if(rctrl.kineticSequenceQueue.peek() == null) {
+                status.setProperty("kineticSequence", "none");
+            } else {
+                status.setProperty("kineticSequence", rctrl.kineticSequenceQueue.peek().sequenceName);
+            }
+            
             
             // Update relay status
             System.out.println("updating relay status now");

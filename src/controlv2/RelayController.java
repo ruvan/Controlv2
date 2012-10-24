@@ -24,7 +24,7 @@ public class RelayController extends Thread {
     // Triangle / Relay
     static Relay[][] relayTable = new Relay[19][8];
     static Flower[][] flowers = new Flower[3][12];
-    static int[][] sensors = new int[2][16];
+    static int[][] sensors = new int[2][10];
 
     public RelayController(Controlv2 ctrl, String port, int baud, String programName) {
         this.ctrl = ctrl;
@@ -153,7 +153,7 @@ public class RelayController extends Thread {
         }
     }
     
-        static public void updateRelays() {
+    static public void updateRelays() {
         for (int bank = 0; bank < 19; bank++) {
             int command = 0;
             for (int relay = 0; relay < 8; relay++) {
@@ -215,22 +215,24 @@ public class RelayController extends Thread {
      * @param input 
      */
     static public void override(String input) {
-        clear();
+        clear(); // reset all relay values
+        kineticSequenceQueue.clear(); // clear the queue
         String[] overrideCommands = input.split(",");
         for(int i=0; i<overrideCommands.length; i++) {
             String[] command = overrideCommands[i].split("-");
             int bank = Integer.parseInt(command[0]);
             String binaryCommand = Integer.toBinaryString(Integer.parseInt(command[0]));
         }
+        updateRelays();
     }
     
     static public void executeQueue() {
         KineticSequence head = kineticSequenceQueue.peek();
         if (head!=null) {
             if(head.sequenceName.equals("runDiagonalChase")) {runDiagonalChase(head);} 
-            else if (head.sequenceName.equals("runAllOnOff")) {runAllOnOff();}
-            else if (head.sequenceName.equals("turnOn")) {turnOn();}
-            else if (head.sequenceName.equals("turnOff")) {turnOff();}
+            else if (head.sequenceName.equals("runAllOnOff")) {runAllOnOff(head);}
+            else if (head.sequenceName.equals("turnOn")) {turnOn(head);}
+            else if (head.sequenceName.equals("turnOff")) {turnOff(head);}
             // if the sequence is finished then remove it
             if(head.finished) {kineticSequenceQueue.remove();}
         } else {
@@ -354,7 +356,9 @@ public class RelayController extends Thread {
         }
     }
 
-    static public void runAllOnOff() {
+    
+    // This sequence has not been finished converting
+    static public void runAllOnOff(KineticSequence ks) {
         for (int level = 0; level < 3; level++) {
             for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
                 flowers[level][flowerNumber].allOff();
@@ -376,10 +380,10 @@ public class RelayController extends Thread {
             }
         }
         updateRelays();
-        sleep(sleepTime);
+        ks.finished = true;
     }
 
-    static public void turnOff() {
+    static public void turnOff(KineticSequence ks) {
         //pull in all actuators
         for (int bank = 1; bank < 19; bank++) {
             for (int relay = 1; relay < 8; relay++) {
@@ -397,9 +401,10 @@ public class RelayController extends Thread {
         // relay coil 12V supply
         relayTable[0][1].setState(false);
         updateRelays();
+        ks.finished = true;
     }
 
-    static public void turnOn() {
+    static public void turnOn(KineticSequence ks) {
         // turn on all PSU's
         for (int bank = 0; bank < 19; bank++) {
             relayTable[bank][0].setState(true);
@@ -407,6 +412,7 @@ public class RelayController extends Thread {
         // relay coil 12V supply
         relayTable[0][1].setState(true);
         updateRelays();
+        ks.finished = true;
     }
 
 }
