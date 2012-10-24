@@ -24,6 +24,7 @@ public class Controlv2 {
     static String commandFileLoc;
     Boolean debug = true;
     static long commandFileModTime;
+    
 
     /**
      * Totem Behavioural Variables
@@ -31,6 +32,7 @@ public class Controlv2 {
     static String mood;
     static int activityLevel;
     static int startOfDay;
+    static int endOfDay;
     
     /**
      * @param args the command line arguments
@@ -39,14 +41,28 @@ public class Controlv2 {
         ctrl = new Controlv2();
         loadConfig(args[0]);
         commandFileModTime = new File(commandFileLoc).lastModified();
-        Calendar calendar = Calendar.getInstance();
         
+        Calendar calendar = Calendar.getInstance();
         int currentSecond = calendar.get(Calendar.SECOND);
+        int currentMinute = calendar.get(Calendar.MINUTE);
         
         while(true) {
-            if(calendar.get(Calendar.SECOND)>currentSecond) {
+            // wait until the next second
+            if(calendar.get(Calendar.SECOND)>currentSecond || calendar.get(Calendar.MINUTE) != currentMinute) {
                 currentSecond=calendar.get(Calendar.SECOND);
+                currentMinute = calendar.get(Calendar.MINUTE);
+                
+                if(calendar.get(Calendar.HOUR_OF_DAY) > startOfDay-1 && activityLevel == 0) {
+                    // turn on
+                } else if (calendar.get(Calendar.HOUR_OF_DAY) > endOfDay-1 && activityLevel != -1) {
+                    // turn off
+                    activityLevel=0;
+                    // should empty rctrl's job queue and add a power off job
+                }
                 readCommandFile();
+                
+                respondToWeather();
+                
                 updateStatus();
             }
         }
@@ -67,8 +83,8 @@ public class Controlv2 {
             // Load behavioural vars from status file;
             mood = prop.getProperty("initialMood");
             activityLevel = Integer.parseInt(prop.getProperty("initialActivityLevel"));
-            startOfDay = Integer.parseInt(prop.getProperty("startOfDay"));  // BEWARE of parseInt dropping the leading 0 from 0500
-            
+            startOfDay = Integer.parseInt(prop.getProperty("startOfDay")); 
+            endOfDay = Integer.parseInt(prop.getProperty("endOfDay"));
             
 //            // MIDI vars
 //            if (prop.getProperty("MIDI").equals("true")) {
@@ -155,16 +171,16 @@ public class Controlv2 {
             System.out.println("updating sensor status now");
             System.out.println("sensor array size: " + Integer.toString(rctrl.sensors[1].length));
             for (int i=0; i<rctrl.sensors[1].length; i++) {
-                Byte temp = new Byte(rctrl.sensors[0][i]);
-                System.out.println("sensor " + Integer.toString(i) + " is " + temp.toString());
+                
+                System.out.println("sensor " + Integer.toString(i) + " is " + Integer.toString(rctrl.sensors[0][i]));
                 if(i<6) {
-                    status.setProperty("s,m," + Integer.toString(i + 1), temp.toString());
+                    status.setProperty("s,m," + Integer.toString(i + 1), Integer.toString(rctrl.sensors[0][i]));
                 } else if(i<8) {
-                    status.setProperty("s,w," + Integer.toString(i - 5), temp.toString());
+                    status.setProperty("s,w," + Integer.toString(i - 5), Integer.toString(rctrl.sensors[0][i]));
                 } else if(i==8) {
-                    status.setProperty("s,r", temp.toString());
+                    status.setProperty("s,r", Integer.toString(rctrl.sensors[0][i]));
                 } else {
-                    status.setProperty("s,l", temp.toString());
+                    status.setProperty("s,l", Integer.toString(rctrl.sensors[0][i]));
                 }
             }
 
@@ -177,6 +193,10 @@ public class Controlv2 {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+    }
+    
+    static public void respondToWeather() {
+        // Check wind speed, light and rain, turn off / on if necessary 
     }
     
     static public void sleep(int time) {
