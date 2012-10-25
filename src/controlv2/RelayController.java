@@ -13,7 +13,7 @@ public class RelayController extends Thread {
     /**
      * Class Variables
      */
-    Controlv2 ctrl;
+    static Controlv2 ctrl;
     SerialPort relaySerialPort;
     static InputStream relayInputStream;
     static OutputStream relayOutputStream;
@@ -247,7 +247,9 @@ public class RelayController extends Thread {
             else if (head.sequenceName.equals("turnOn")) {turnOn(head);}
             else if (head.sequenceName.equals("turnOff")) {turnOff(head);}
             // if the sequence is finished then remove it
-            if(head.finished) {kineticSequenceQueue.remove();}
+            if(ctrl.getActivityLevel() != -1) {
+                if(head.finished) {kineticSequenceQueue.remove();}
+            }
         } else {
             
             // no sequences in the queue
