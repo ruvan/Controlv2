@@ -208,6 +208,19 @@ public class RelayController extends Thread {
             relayTable[bank][relayNumber].setState(false);
         }
     }
+    
+    static public void updateRelayStrokes() {
+//        Properties status = new Properties();
+//
+//        try {
+//            // load the status file
+//            FileInputStream strokesFI = new FileInputStream("C:\\ControlV2\\src\\controlv2\\strokes.properties");
+//            status.load(strokesFI);
+//          
+//            // Update misc. fields
+//            // status.setProperty("activityLevel", Integer.toString(activityLevel));
+//            
+    }
 
     /**
      * When override is called totem should stop any sequence and run the override command.
@@ -241,12 +254,21 @@ public class RelayController extends Thread {
         }
     }
 
-    
-    
+    // -------------------------------------------------------------------------------------------- //
+    // -------------------------------------------------------------------------------------------- //
+    // -------------------------------------------------------------------------------------------- //
+    // -------------------------------------------------------------------------------------------- //
+    // -------------------------------------------------------------------------------------------- //
     // -------------------------------------------------------------------------------------------- //
     /**
      * Start of sequences
      */
+    // -------------------------------------------------------------------------------------------- //
+    // -------------------------------------------------------------------------------------------- //
+    // -------------------------------------------------------------------------------------------- //
+    // -------------------------------------------------------------------------------------------- //
+    // -------------------------------------------------------------------------------------------- //
+    // -------------------------------------------------------------------------------------------- //
     
     // Should activate a coloumn of flowers corresponding to the PIR sesor below it.
     // Should also test rain wind and light sensors.
@@ -388,6 +410,7 @@ public class RelayController extends Thread {
         // relay coil 12V supply
         relayTable[0][1].setState(false);
         updateRelays();
+        updateRelayStrokes();
         ks.finished = true;
     }
 

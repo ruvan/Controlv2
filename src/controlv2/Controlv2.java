@@ -54,6 +54,7 @@ public class Controlv2 {
                 
                 if(calendar.get(Calendar.HOUR_OF_DAY) > startOfDay-1 && activityLevel == 0) {
                     // turn on
+                    activityLevel=1;
                 } else if (calendar.get(Calendar.HOUR_OF_DAY) > endOfDay-1 && activityLevel != -1) {
                     // turn off
                     activityLevel=0;

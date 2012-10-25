@@ -9,6 +9,7 @@ package controlv2;
 public class Relay {
     
     private boolean state;
+    private int strokes = 0;
     
     public void Relay(boolean state){
         this.state = state;
@@ -23,6 +24,9 @@ public class Relay {
     }
     
     public void setState(boolean newState) {
+        if(newState!=state) { // will perform a stroke
+            strokes++;
+        }
         state = newState;
     }
     
