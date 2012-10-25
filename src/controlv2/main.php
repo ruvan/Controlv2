@@ -19,7 +19,7 @@ if (!isset($_SESSION['authenticated']) || $_SESSION['authenticated'] != true) {
         }
         #relayDiv {
             position:absolute;
-            top:25%;
+            top:28%;
             left:60%;
         }
         </style>
@@ -167,6 +167,7 @@ if ($_SESSION['userlevel'] == 1) {
             <select name='sequence'>
             <option value='runDiagonalChase'>Diagonal Chase</option>
             <option value='runAllOnOff'>All On Off</option>
+            <option value='runInputTest'>Input Test</option>
             </select>
             </td>
             <td>

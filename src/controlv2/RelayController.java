@@ -24,7 +24,7 @@ public class RelayController extends Thread {
     // Triangle / Relay
     static Relay[][] relayTable = new Relay[19][8];
     static Flower[][] flowers = new Flower[3][12];
-    static int[][] sensors = new int[2][10];
+    static int[][] sensors = new int[2][16];
 
     public RelayController(Controlv2 ctrl, String port, int baud, String programName) {
         this.ctrl = ctrl;
@@ -50,7 +50,7 @@ public class RelayController extends Thread {
         
         while (true) {
             // wait until the next second
-            if(calendar.get(Calendar.SECOND)>currentSecond || calendar.get(Calendar.MINUTE) != currentMinute) {
+//            if(calendar.get(Calendar.SECOND)>currentSecond || calendar.get(Calendar.MINUTE) != currentMinute) {
                 currentSecond = calendar.get(Calendar.SECOND);
                 currentMinute = calendar.get(Calendar.MINUTE);
                 
@@ -59,13 +59,14 @@ public class RelayController extends Thread {
                 // should check here whether new sequences need to be added to the queue.... or should that get done by control?
                 
                 executeQueue();
-            }
+//            }
+                        
+           updateSensors();
+           
 //            runDiagonalChase();
 //            runFlowerChase();
 //            runAllOnOff();
 //            runInputTest();
-            
-           updateSensors();
         }
     }
 
@@ -171,7 +172,7 @@ public class RelayController extends Thread {
     }
     
     static public void updateSensors() {
-        while(true) {
+        
         try {
             relayInputStream.skip(relayInputStream.available());
         } catch (IOException ex) {
@@ -182,19 +183,24 @@ public class RelayController extends Thread {
         sleep(1000); // this is a rather long wait, will have ot experiment to find a suitable time
         byte[] bytes = new byte[sensors[1].length];
         int numberBytesRead = readLine(bytes);
+        System.out.println("bytes read: " + Integer.toString(numberBytesRead));
         for(int i=0; i<bytes.length; i++) {
-            int newValue = ((Byte)new Byte(bytes[i])).intValue() + 128; // adding 128 because we get a value ranging from -128 to 128
-            System.out.println(Integer.toString(i) + " is: " + Integer.toString(newValue));
-            if(Math.abs(sensors[0][i]-newValue)<6) { // Have set 6 to be the threshold for the sensor value changing
-                sensors[1][i]=0;
-                sensors[0][i]=newValue;
+           
+            char temp = (char)bytes[i];
+            int tempInt = (int)temp;
+            Byte tempByte = new Byte(bytes[i]);
+            Character newValue = new Character((char)bytes[i]);
+            System.out.println(Integer.toString(i) + " is: " + Integer.toString(temp & 0xff) + " - "  + newValue.toString() + " - "  + tempByte.toString() + " - "  + String.format("%02X", bytes[i]));
+            if(Math.abs(sensors[0][i]-(temp & 0xff)) > 6) { // we consider the sensor state changed
+                sensors[0][i] = (temp & 0xff);
+                sensors[1][i] = 1;
             } else {
-                sensors[1][i]=1;
-                sensors[0][i]=newValue;
+                sensors[1][i] = 0;
             }
+                
         }
         sleep(1000); // this is a rather long wait, will have ot experiment to find a suitable time
-        }
+        
     }
    
     static public void turnOnBank(int bank) {
@@ -221,6 +227,17 @@ public class RelayController extends Thread {
 //            // status.setProperty("activityLevel", Integer.toString(activityLevel));
 //            
     }
+    
+    static public void writeBinaryStringToBank(int bank, int number) {
+        String binaryString = Integer.toBinaryString(number);
+        for (int i = 0; i < binaryString.length(); i++) {
+            if(binaryString.charAt(i) == '0') {
+                relayTable[bank-1][i].setState(false);
+            } else {
+                relayTable[bank-1][i].setState(true);
+            }
+        }
+    }
 
     /**
      * When override is called totem should stop any sequence and run the override command.
@@ -233,8 +250,7 @@ public class RelayController extends Thread {
         String[] overrideCommands = input.split(",");
         for(int i=0; i<overrideCommands.length; i++) {
             String[] command = overrideCommands[i].split("-");
-            int bank = Integer.parseInt(command[0]);
-            String binaryCommand = Integer.toBinaryString(Integer.parseInt(command[0]));
+            writeBinaryStringToBank(Integer.parseInt(command[0]),Integer.parseInt(command[1]));
         }
         updateRelays();
     }
@@ -246,6 +262,7 @@ public class RelayController extends Thread {
             else if (head.sequenceName.equals("runAllOnOff")) {runAllOnOff(head);}
             else if (head.sequenceName.equals("turnOn")) {turnOn(head);}
             else if (head.sequenceName.equals("turnOff")) {turnOff(head);}
+            else if (head.sequenceName.equals("runInputTest")) {runInputTest();}
             // if the sequence is finished then remove it
             if(head.finished) {kineticSequenceQueue.remove();}
         } else {
@@ -275,7 +292,7 @@ public class RelayController extends Thread {
     static public void runInputTest() {
         boolean triggered = false;
         for (int i = 0; i < 6; i++) {
-            if (sensors[0][i] > 128) { // the halfway value
+            if (sensors[0][i] > 64) { // the halfway value
                 if (!flowers[0][i * 2 + 1].isInBloom()) {
                     triggered = true;
                     flowers[0][i * 2 + 1].allOn();

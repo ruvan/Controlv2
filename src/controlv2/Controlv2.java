@@ -48,7 +48,7 @@ public class Controlv2 {
         
         while(true) {
             // wait until the next second
-            if(calendar.get(Calendar.SECOND)>currentSecond || calendar.get(Calendar.MINUTE) != currentMinute) {
+//            if(calendar.get(Calendar.SECOND)>currentSecond || calendar.get(Calendar.MINUTE) != currentMinute) {
                 currentSecond=calendar.get(Calendar.SECOND);
                 currentMinute = calendar.get(Calendar.MINUTE);
                 
@@ -65,7 +65,7 @@ public class Controlv2 {
                 respondToWeather();
                 
                 updateStatus();
-            }
+//            }
         }
     }
     
@@ -162,7 +162,7 @@ public class Controlv2 {
             
             
             // Update relay status
-            System.out.println("updating relay status now");
+//            System.out.println("updating relay status now");
             for (int bank = 0; bank < 19; bank++) {
                 String command = "";
                 for (int relay = 0; relay < 8; relay++) {
@@ -173,17 +173,17 @@ public class Controlv2 {
                     }
                 }
                 // set the status of the bank in the status file
-                System.out.println(status.getProperty("b," + Integer.toString(bank + 1)));
-                System.out.println("updating relay b," + Integer.toString(bank + 1) + " to " + command);
+//                System.out.println(status.getProperty("b," + Integer.toString(bank + 1)));
+//                System.out.println("updating relay b," + Integer.toString(bank + 1) + " to " + command);
                 status.setProperty("b," + Integer.toString(bank + 1), command);
             }
             
             // Update sensor status
-            System.out.println("updating sensor status now");
-            System.out.println("sensor array size: " + Integer.toString(rctrl.sensors[1].length));
+//            System.out.println("updating sensor status now");
+//            System.out.println("sensor array size: " + Integer.toString(rctrl.sensors[1].length));
             for (int i=0; i<rctrl.sensors[1].length; i++) {
                 
-                System.out.println("sensor " + Integer.toString(i) + " is " + Integer.toString(rctrl.sensors[0][i]));
+//                System.out.println("sensor " + Integer.toString(i) + " is " + Integer.toString(rctrl.sensors[0][i]));
                 if(i<6) {
                     status.setProperty("s,m," + Integer.toString(i + 1), Integer.toString(rctrl.sensors[0][i]));
                 } else if(i<8) {
