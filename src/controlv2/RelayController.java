@@ -277,40 +277,6 @@ public class RelayController extends Thread {
             
         }
     }
-//        while (true) {
-            
-//            try {
-//                relayInputStream.skip(relayInputStream.available());
-//            } catch (IOException ex) {
-//                ex.getMessage();
-//            }
-//            send(254);
-//            send(192);
-//            sleep(500);
-//            byte[] bytes = new byte[12];
-//            int numberBytesRead = readLine(bytes);
-//            for (int i = 0; i < 6; i++) {
-//                System.out.println("sensor " + i + " is " + bytes[i]);
-//                if (bytes[i] < 0) {
-//                    if (!flowers[0][i * 2 + 1].isInBloom()) {
-//                        triggered = true;
-//                        flowers[0][i * 2 + 1].allOn();
-//                        flowers[1][i * 2 + 1].allOn();
-//                        flowers[2][i * 2 + 1].allOn();
-//                    }
-//                } else {
-//                    if (flowers[0][i * 2 + 1].isInBloom()) {
-//                        triggered = true;
-//                        flowers[0][i * 2 + 1].allOff();
-//                        flowers[1][i * 2 + 1].allOff();
-//                        flowers[2][i * 2 + 1].allOff();
-//                    }
-//                }
-//            }
-//            updateRelays();
-            
-//        }
-//    }
 
     static public void runDiagonalChase(KineticSequence ks) {
         // First initialise the map and fill it with vars needed for this method
