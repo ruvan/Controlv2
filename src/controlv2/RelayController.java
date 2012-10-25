@@ -251,45 +251,66 @@ public class RelayController extends Thread {
     // Should activate a coloumn of flowers corresponding to the PIR sesor below it.
     // Should also test rain wind and light sensors.
     static public void runInputTest() {
-        while (true) {
-            boolean triggered = false;
-            try {
-                relayInputStream.skip(relayInputStream.available());
-            } catch (IOException ex) {
-                ex.getMessage();
-            }
-            send(254);
-            send(192);
-            sleep(500);
-            byte[] bytes = new byte[12];
-            int numberBytesRead = readLine(bytes);
-            for (int i = 0; i < 6; i++) {
-                System.out.println("sensor " + i + " is " + bytes[i]);
-                if (bytes[i] < 0) {
-                    if (!flowers[0][i * 2 + 1].isInBloom()) {
-                        triggered = true;
-                        flowers[0][i * 2 + 1].allOn();
-                        flowers[1][i * 2 + 1].allOn();
-                        flowers[2][i * 2 + 1].allOn();
-                    }
-                } else {
-                    if (flowers[0][i * 2 + 1].isInBloom()) {
-                        triggered = true;
-                        flowers[0][i * 2 + 1].allOff();
-                        flowers[1][i * 2 + 1].allOff();
-                        flowers[2][i * 2 + 1].allOff();
-                    }
+        boolean triggered = false;
+        for (int i = 0; i < 6; i++) {
+            if (sensors[0][i] > 128) { // the halfway value
+                if (!flowers[0][i * 2 + 1].isInBloom()) {
+                    triggered = true;
+                    flowers[0][i * 2 + 1].allOn();
+                    flowers[1][i * 2 + 1].allOn();
+                    flowers[2][i * 2 + 1].allOn();
+                }
+            } else {
+                if (flowers[0][i * 2 + 1].isInBloom()) {
+                    triggered = true;
+                    flowers[0][i * 2 + 1].allOff();
+                    flowers[1][i * 2 + 1].allOff();
+                    flowers[2][i * 2 + 1].allOff();
                 }
             }
-            updateRelays();
             if (triggered) {
                 System.out.println("Sleeping sensors for 7 seconds");
                 sleep(7000);
             } else {
                 sleep(100);
             }
+            
         }
     }
+//        while (true) {
+            
+//            try {
+//                relayInputStream.skip(relayInputStream.available());
+//            } catch (IOException ex) {
+//                ex.getMessage();
+//            }
+//            send(254);
+//            send(192);
+//            sleep(500);
+//            byte[] bytes = new byte[12];
+//            int numberBytesRead = readLine(bytes);
+//            for (int i = 0; i < 6; i++) {
+//                System.out.println("sensor " + i + " is " + bytes[i]);
+//                if (bytes[i] < 0) {
+//                    if (!flowers[0][i * 2 + 1].isInBloom()) {
+//                        triggered = true;
+//                        flowers[0][i * 2 + 1].allOn();
+//                        flowers[1][i * 2 + 1].allOn();
+//                        flowers[2][i * 2 + 1].allOn();
+//                    }
+//                } else {
+//                    if (flowers[0][i * 2 + 1].isInBloom()) {
+//                        triggered = true;
+//                        flowers[0][i * 2 + 1].allOff();
+//                        flowers[1][i * 2 + 1].allOff();
+//                        flowers[2][i * 2 + 1].allOff();
+//                    }
+//                }
+//            }
+//            updateRelays();
+            
+//        }
+//    }
 
     static public void runDiagonalChase(KineticSequence ks) {
         // First initialise the map and fill it with vars needed for this method
