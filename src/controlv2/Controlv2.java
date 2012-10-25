@@ -128,8 +128,14 @@ public class Controlv2 {
                     String[] split = commandLine.split("=");
                     if (split[0].charAt(0) == 'r') { // we have a relay command
                         if (split[0].charAt(2) == 'o') { // we have a relay override command
+                            activityLevel = -1;
                             rctrl.override(split[1]);
                         } else if (split[0].charAt(2) == 'a') { // we have a kinetic sequence to queue
+                            if(split.equals("auto")) {
+                                activityLevel = 1;
+                            } else {
+                                activityLevel = -1;
+                            }
                             rctrl.kineticSequenceQueue.add(new KineticSequence(split[1], true));
                         }
                     }
@@ -141,6 +147,10 @@ public class Controlv2 {
                 ex.printStackTrace();
             }
         }
+    }
+    
+    public int getActivityLevel() {
+        return activityLevel;
     }
 
     static public void updateStatus() {
@@ -158,6 +168,7 @@ public class Controlv2 {
                 status.setProperty("kineticSequence", "none");
             } else {
                 status.setProperty("kineticSequence", rctrl.kineticSequenceQueue.peek().sequenceName);
+                // Could get an iterator and iterate through the queue here to display queue elements in the UI
             }
             
             
