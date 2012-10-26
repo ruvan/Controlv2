@@ -199,7 +199,7 @@ public class RelayController extends Thread {
             }
                 
         }
-        sleep(1000); // this is a rather long wait, will have ot experiment to find a suitable time
+//        sleep(1000); // this is a rather long wait, will have ot experiment to find a suitable time
         
     }
    
@@ -308,8 +308,9 @@ public class RelayController extends Thread {
                 }
             }
             if (triggered) {
-                System.out.println("Sleeping sensors for 7 seconds");
-                sleep(7000);
+                updateRelays();
+//                System.out.println("Sleeping sensors for 7 seconds");
+//                sleep(7000);
             } else {
                 sleep(100);
             }
