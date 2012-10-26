@@ -24,7 +24,7 @@ public class RelayController extends Thread {
     // Triangle / Relay
     static Relay[][] relayTable = new Relay[19][8];
     static Flower[][] flowers = new Flower[3][12];
-    static int[][] sensors = new int[2][16];
+    static int[][] sensors = new int[2][32];
 
     public RelayController(Controlv2 ctrl, String port, int baud, String programName) {
         this.ctrl = ctrl;
@@ -184,8 +184,12 @@ public class RelayController extends Thread {
         byte[] bytes = new byte[sensors[1].length];
         int numberBytesRead = readLine(bytes);
         System.out.println("bytes read: " + Integer.toString(numberBytesRead));
-        for(int i=0; i<bytes.length; i++) {
+        for(int i=0; i<bytes.length; i+=2) {
            
+            byte[] tempByte2 = new byte[2];
+            tempByte2[0]=bytes[i];
+            tempByte2[1]=bytes[i+1];
+            BigInteger bigInt
             char temp = (char)bytes[i];
             int tempInt = (int)temp;
             Byte tempByte = new Byte(bytes[i]);
