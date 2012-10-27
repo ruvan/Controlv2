@@ -42,19 +42,19 @@ public class Controlv2 {
         loadConfig(args[0]);
         commandFileModTime = new File(commandFileLoc).lastModified();
         
+        Date date = new Date();
         Calendar calendar = Calendar.getInstance();
-        int currentSecond = calendar.get(Calendar.SECOND);
-        int currentMinute = calendar.get(Calendar.MINUTE);
+        long currentTime = date.getTime();
         
         while(true) {
             // wait until the next second
-//            if(calendar.get(Calendar.SECOND)>currentSecond || calendar.get(Calendar.MINUTE) != currentMinute) {
-                currentSecond=calendar.get(Calendar.SECOND);
-                currentMinute = calendar.get(Calendar.MINUTE);
+            if(date.getTime()-currentTime > 1000) {
+                currentTime=date.getTime();
                 
-                if(calendar.get(Calendar.HOUR_OF_DAY) > startOfDay-1 && activityLevel == 0) {
+                if(calendar.get(Calendar.HOUR_OF_DAY) > startOfDay-2 && activityLevel == 0) {
                     // turn on
                     activityLevel=1;
+                    startOfDay();
                 } else if (calendar.get(Calendar.HOUR_OF_DAY) > endOfDay-1 && activityLevel != -1) {
                     // turn off
                     activityLevel=0;
@@ -65,8 +65,34 @@ public class Controlv2 {
                 respondToWeather();
                 
                 updateStatus();
-//            }
+            }
         }
+    }
+    
+    private static void startOfDay() {
+        // generate 10 random dance times -- note sequences need a start time
+        // 
+        Long[] danceTimes = new Long[10];
+        Calendar tempCalendar = Calendar.getInstance();
+        
+        tempCalendar.add(Calendar.HOUR,1); 
+        randomizeTime(tempCalendar, 28);
+        for (int i = 0; i < danceTimes.length; i++) {
+            danceTimes[i] = new Long(tempCalendar.getTimeInMillis());
+            tempCalendar.add(Calendar.MINUTE,75);
+            randomizeTime(tempCalendar, 34);
+        }
+        
+        rctrl.updateDanceTimes(danceTimes);
+    }
+    
+    private static void randomizeTime(Calendar tempCalendar, int number) {
+        Random randomGenerator = new Random();
+        int minutes = randomGenerator.nextInt(number);
+        if(randomGenerator.nextBoolean()) {
+            minutes = minutes*(-1);
+        }
+        tempCalendar.add(Calendar.MINUTE, minutes);
     }
     
     private static void loadConfig(String configPath) {
@@ -136,7 +162,7 @@ public class Controlv2 {
                             } else {
                                 activityLevel = -1;
                             }
-                            rctrl.kineticSequenceQueue.add(new KineticSequence(split[1], true));
+                            rctrl.kineticSequenceQueue.add(new KineticSequence(split[1], true, false));
                         }
                     }
                 }

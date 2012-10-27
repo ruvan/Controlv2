@@ -4,6 +4,7 @@
  */
 package controlv2;
 
+import java.util.*;
 /**
  *
  * @author Tyrone
@@ -12,6 +13,8 @@ public class Flower {
     Petal[] petals = new Petal[3];
     int[] upPetal = {5,7,3};
     int[] downPetal = {4,2,6};
+    int level;
+    int flowerNumber;
     
     public Flower(int level, int flowerNumber, Relay[][] relayTable) {
         // Check if level is even or odd
@@ -34,7 +37,8 @@ public class Flower {
                 setPetals(upPetal, level, flowerNumber, relayTable);
             }
         }
-        
+        this.level = level;
+        this.flowerNumber = flowerNumber;
     }
     
     public void setPetals(int[] petalType, int level, int flowerNumber, Relay[][] relayTable){
@@ -65,5 +69,13 @@ public class Flower {
         }
         return true;
     }
+    
+    public void togglePetals() {
+        for (int i=0; i<3; i++) {
+            petals[i].relay.toggleState();
+        }
+    }
+    
+    
     
 }

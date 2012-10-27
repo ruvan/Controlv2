@@ -8,7 +8,7 @@ package controlv2;
 
 public class Relay {
     
-    private boolean state;
+    private boolean state; // true if open
     private int strokes = 0;
     
     public void Relay(boolean state){
@@ -28,6 +28,14 @@ public class Relay {
             strokes++;
         }
         state = newState;
+    }
+    
+    public void toggleState() {
+        if(state) {
+            setState(false);
+        }else{
+            setState(true);
+        }
     }
     
 }
