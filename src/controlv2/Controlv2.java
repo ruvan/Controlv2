@@ -73,7 +73,7 @@ public class Controlv2 {
     private static void startOfDay() {
         // generate 10 random dance times -- note sequences need a start time
         // 
-        Long[] danceTimes = new Long[10];
+        Long[] danceTimes = new Long[20];
         Calendar tempCalendar = Calendar.getInstance();
         
 //        tempCalendar.add(Calendar.HOUR,1); 

@@ -34,7 +34,7 @@ public class RelayController extends Thread {
     // Triangle / Relay
     static Relay[][] relayTable = new Relay[19][8];
     static Flower[][] flowers = new Flower[3][12];
-    static int[][] sensors = new int[2][24];
+    static int[][] sensors = new int[2][25];
 
     public RelayController(Controlv2 ctrl, String port, int baud, String programName) {
         this.ctrl = ctrl;
@@ -323,24 +323,28 @@ public class RelayController extends Thread {
             ex.getMessage();
         }
         send(254);
-        send(192);
+        send(204);
         sleep(1000); // this is a rather long wait, will have ot experiment to find a suitable time
         byte[] bytes = new byte[sensors[1].length];
         int numberBytesRead = readLine(bytes);
 //        System.out.println("bytes read: " + Integer.toString(numberBytesRead));
-        for(int i=0; i<bytes.length; i+=2) {
+        for(int i=1; i<bytes.length; i+=2) {
            
             byte[] tempByte2 = new byte[2];
             tempByte2[0]=bytes[i];
             tempByte2[1]=bytes[i+1];
             BigInteger bigInt = new BigInteger(tempByte2);
             
-            char temp = (char)bytes[i];
-            int tempInt = (int)temp;
-            Byte tempByte = new Byte(bytes[i]);
-            Character newValue = new Character((char)bytes[i]);
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format("%02X", bytes[i+1]));
+                sb.append(String.format("%02X", bytes[i]));
             
-//            System.out.println(Integer.toString(i) + " is: " + Integer.toString(bigInt.intValue()) + " - " + Integer.toString(temp & 0xff) + " - "  + newValue.toString() + " - "  + tempByte.toString() + " - "  + String.format("%02X", bytes[i]));
+            //System.out.println(sb.toString());
+            int tempInt = bytes[i] << 8 | bytes[i+1];
+            
+//            System.out.println(Integer.toString((int)(i*0.5)) + " is: " + Integer.toString(bigInt.intValue()));
+            System.out.println(Integer.toString((int)((i-1)*0.5)) + " is: " + Integer.toString(tempInt) + " - " + sb.toString());
+//            System.out.printf("%02X", bytes[i]);
             if(Math.abs(sensors[0][i]-bigInt.intValue()) > 6) { // we consider the sensor state changed
                 sensors[0][i] = bigInt.intValue();
                 sensors[1][i] = 1;
@@ -560,6 +564,7 @@ public class RelayController extends Thread {
     // unfinished
     static public void runBeaksPropogation(KineticSequence ks) {
         System.out.println("running beaks prop ");
+        if(ks.add){System.out.println("adding");}
         ks.isReaction = true;
         ks.started = true;
         ArrayList sensorList = (ArrayList)ks.map.get("sensors");
