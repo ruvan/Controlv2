@@ -1,1 +1,1 @@
-r,a=runInputTest
+r,a=runDiagonalChase

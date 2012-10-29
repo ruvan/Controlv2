@@ -44,14 +44,15 @@ public class Controlv2 {
         
         Date date = new Date();
         Calendar calendar = Calendar.getInstance();
-        long currentTime = date.getTime();
+        long currentTime = System.currentTimeMillis();
         
         while(true) {
             // wait until the next second
-            if(date.getTime()-currentTime > 1000) {
-                currentTime=date.getTime();
+            if(System.currentTimeMillis()-currentTime > 1000) {
+                currentTime=System.currentTimeMillis();
                 
-                if(calendar.get(Calendar.HOUR_OF_DAY) > startOfDay-2 && activityLevel == 0) {
+//                if(calendar.get(Calendar.HOUR_OF_DAY) > startOfDay-2 && activityLevel == 0) {
+                if(activityLevel == 0) {
                     // turn on
                     activityLevel=1;
                     startOfDay();
@@ -75,12 +76,14 @@ public class Controlv2 {
         Long[] danceTimes = new Long[10];
         Calendar tempCalendar = Calendar.getInstance();
         
-        tempCalendar.add(Calendar.HOUR,1); 
-        randomizeTime(tempCalendar, 28);
+//        tempCalendar.add(Calendar.HOUR,1); 
+//        randomizeTime(tempCalendar, 28);
         for (int i = 0; i < danceTimes.length; i++) {
             danceTimes[i] = new Long(tempCalendar.getTimeInMillis());
-            tempCalendar.add(Calendar.MINUTE,75);
-            randomizeTime(tempCalendar, 34);
+//            tempCalendar.add(Calendar.MINUTE,75);
+//            randomizeTime(tempCalendar, 34);
+            tempCalendar.add(Calendar.MINUTE,5);
+            randomizeTime(tempCalendar, 2);
         }
         
         rctrl.updateDanceTimes(danceTimes);
