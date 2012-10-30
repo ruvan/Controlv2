@@ -29,7 +29,7 @@ public class RelayController extends Thread {
     static Random randomGenerator = new Random();
     static Date date = new Date();
     static Calendar calendar = Calendar.getInstance();
-    static int numberOfStills = 14;
+    static int numberOfStills = 16;
     
     // Triangle / Relay
     static Relay[][] relayTable = new Relay[19][8];
@@ -122,7 +122,39 @@ public class RelayController extends Thread {
                         case 13:
                             kineticSequenceQueue.add(new KineticSequence("runAllBloom", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
                             break;
-
+                        case 14:
+                            KineticSequence ks14 = new KineticSequence("runHalf", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean());
+                            ks14.map = new HashMap<>();
+                            ks14.map.put("orientationNumber", randomGenerator.nextInt(5)+2);
+                            kineticSequenceQueue.add(ks14);
+                            break;
+                        case 15:
+                            // Dinosaur foot
+                            KineticSequence ks151 = new KineticSequence("runHalf", false, false);
+                            KineticSequence ks152 = new KineticSequence("runHalf", false, true);
+                            ks151.map = new HashMap<>();
+                            ks152.map = new HashMap<>();
+                            switch(randomGenerator.nextInt(3)) {
+                                case 0:
+                                    ks151.map.put("orientationNumber",2); 
+                                    ks152.map.put("orientationNumber",3);
+                                    break;
+                                case 1:
+                                    ks151.map.put("orientationNumber",5); 
+                                    ks152.map.put("orientationNumber",2);
+                                    break;
+                                case 2:
+                                    ks151.map.put("orientationNumber",6); 
+                                    ks152.map.put("orientationNumber",7);
+                                    break;
+                                case 3:
+                                    ks151.map.put("orientationNumber",4); 
+                                    ks152.map.put("orientationNumber",7);
+                                    break;
+                            }
+                            kineticSequenceQueue.add(ks151);
+                            kineticSequenceQueue.add(ks152);
+                            break;
                     }
                 }
                 
@@ -324,7 +356,7 @@ public class RelayController extends Thread {
         }
         send(254);
         send(204);
-        sleep(1000); // this is a rather long wait, will have ot experiment to find a suitable time
+        sleep(1000); // this is a rather long wait, will have to experiment to find a suitable time
         byte[] bytes = new byte[sensors[1].length];
         int numberBytesRead = readLine(bytes);
 //        System.out.println("bytes read: " + Integer.toString(numberBytesRead));
@@ -337,7 +369,7 @@ public class RelayController extends Thread {
             
             StringBuilder sb = new StringBuilder();
             sb.append(String.format("%02X", bytes[i+1]));
-                sb.append(String.format("%02X", bytes[i]));
+            sb.append(String.format("%02X", bytes[i]));
             
             //System.out.println(sb.toString());
             int tempInt = bytes[i] << 8 | bytes[i+1];
@@ -353,8 +385,6 @@ public class RelayController extends Thread {
             }
                 
         }
-//        sleep(1000); // this is a rather long wait, will have ot experiment to find a suitable time
-        
     }
    
     static public void turnOnBank(int bank) {
@@ -585,6 +615,7 @@ public class RelayController extends Thread {
             else if (head.sequenceName.equals("runHugeTriangle")) {runHugeTriangle(head);}
             else if (head.sequenceName.equals("runChaos")) {runChaos(head);}
             else if (head.sequenceName.equals("runCheckerBoard")) {runCheckerBoard(head);}
+            else if (head.sequenceName.equals("runHalf")) {runHalf(head);}
             // if the sequence is finished then remove it
             if(ctrl.getActivityLevel() != -1) {
                 if(head.finished) {kineticSequenceQueue.remove();}
@@ -642,23 +673,47 @@ public class RelayController extends Thread {
        for (int level = 0; level < 3; level++) {
             for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
                 for (int petalNumber = 0; petalNumber < 3; petalNumber++) {
-                    switch(states[level][flowerNumber][petalNumber]) {
-                        case 1:
+                    if(states[level][flowerNumber][petalNumber] == 1) {
                             if (System.currentTimeMillis() > flowers[level][flowerNumber].petals[petalNumber].relay.getLastTriggeredTime() + 2000) {
                                 ArrayList adjacentPetals = getAdjacentPetals(flowers[level][flowerNumber], flowers[level][flowerNumber].petals[petalNumber]);
                                 while (!adjacentPetals.isEmpty()) {
                                     Petal petal = (Petal)adjacentPetals.remove(0);
                                     Flower flower = (Flower)adjacentPetals.remove(0);
-                                    states[flower.level][flower.flowerNumber][// orientation array index]
+                                    int orientationIndex;
+                                    if(petal.orientation == 5 || petal.orientation == 4) {orientationIndex = 0;} 
+                                    else if(petal.orientation == 7 || petal.orientation == 2) { orientationIndex = 1;}
+                                    else {orientationIndex = 2;}
+                                    states[flower.level][flower.flowerNumber][orientationIndex] = 1;
+                                    petal.relay.toggleState();
                                 }
+                            } else if (System.currentTimeMillis() > flowers[level][flowerNumber].petals[petalNumber].relay.getLastTriggeredTime() + 10000) {
+                                flowers[level][flowerNumber].petals[petalNumber].relay.toggleState();
+                                states[level][flowerNumber][petalNumber] = 2;
                             }
+                            
                     }
                 }
             }
        }
        
+       boolean allAt2 = true;
+       for (int level = 0; level < 3; level++) {
+            for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
+                for (int petalNumber = 0; petalNumber < 3; petalNumber++) {
+                    if(states[level][flowerNumber][petalNumber] != 2) {
+                        allAt2 = false;
+                    }
+                }
+            }
+       }
        
-       ks.finished=true;
+       updateRelays();
+       
+       if(allAt2) { 
+           ks.finished=true;
+       } else {
+           ks.map.put("states", states);
+       }
         
     }
     
@@ -1066,5 +1121,16 @@ public class RelayController extends Thread {
         ks.finished=true;
     }
             
+    static public void runHalf(KineticSequence ks) {
+        System.out.println("running Half");
+        if(!ks.add) { clear(); }
+        int orientationNumber = (int)ks.map.get("orientationNumber");
+        
+        for(int i=0; i<3; i++) {
+            toggleBank(i*6+(orientationNumber-1));
+        }
+        updateRelays();
+        ks.finished = true;
+    }
 
 }
