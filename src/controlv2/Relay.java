@@ -10,13 +10,16 @@ public class Relay {
     
     private boolean state; // true if open
     private int strokes = 0;
+    long lastTriggeredTime;
     
     public void Relay(boolean state){
         this.state = state;
+        lastTriggeredTime = System.currentTimeMillis();
     }
     
     public void Relay() {
         state = false;
+        lastTriggeredTime = System.currentTimeMillis();
     }
     
     public boolean getState() {
@@ -28,6 +31,7 @@ public class Relay {
             strokes++;
         }
         state = newState;
+        lastTriggeredTime = System.currentTimeMillis();
     }
     
     public void toggleState() {
@@ -36,6 +40,10 @@ public class Relay {
         }else{
             setState(true);
         }
+    }
+    
+    public long getLastTriggeredTime() {
+        return lastTriggeredTime;
     }
     
 }

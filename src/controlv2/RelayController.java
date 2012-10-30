@@ -393,6 +393,72 @@ public class RelayController extends Thread {
         }
     }
     
+    static public ArrayList getAdjacentPetals(Flower flower, Petal petal) {
+        ArrayList adjacent = new ArrayList();
+        
+        // Add two other petals of flower
+        for(int i=0; i<3; i++) {
+            if(flower.petals[i] != petal) {
+                adjacent.add(flower.petals[i]);
+                adjacent.add(flower);
+            }
+        }
+        
+        // Add third petal if it exists
+        if ((petal.orientation==5 && flower.level==2) || (petal.orientation==4 && flower.level==0)) {
+            return adjacent;
+        } else {
+            switch(petal.orientation) {
+                case 2:
+                    if(flower.flowerNumber == 11) {
+                        adjacent.add(flowers[flower.level][0].petals[1]);
+                        adjacent.add(flowers[flower.level][0]);
+                    } else {
+                        adjacent.add(flowers[flower.level][flower.flowerNumber+1].petals[1]);
+                        adjacent.add(flowers[flower.level][flower.flowerNumber+1]);
+                    }
+                    break;
+                case 3:
+                    if(flower.flowerNumber == 11) {
+                        adjacent.add(flowers[flower.level][0].petals[2]);
+                        adjacent.add(flowers[flower.level][0]);
+                    } else {
+                        adjacent.add(flowers[flower.level][flower.flowerNumber+1].petals[2]);
+                        adjacent.add(flowers[flower.level][flower.flowerNumber+1]);
+                    }
+                    break;
+                case 4:
+                        adjacent.add(flowers[flower.level+1][flower.flowerNumber].petals[0]);
+                        adjacent.add(flowers[flower.level+1][flower.flowerNumber]);
+                    break;
+                case 5:
+                        adjacent.add(flowers[flower.level-1][flower.flowerNumber].petals[0]);
+                        adjacent.add(flowers[flower.level-1][flower.flowerNumber]);
+                    break;
+                case 6:
+                    if(flower.flowerNumber == 0) {
+                        adjacent.add(flowers[flower.level][11].petals[2]);
+                        adjacent.add(flowers[flower.level][11]);
+                    } else {
+                        adjacent.add(flowers[flower.level][flower.flowerNumber-1].petals[2]);
+                        adjacent.add(flowers[flower.level][flower.flowerNumber-1]);
+                    }
+                    break;
+                case 7:
+                    if(flower.flowerNumber == 0) {
+                        adjacent.add(flowers[flower.level][11].petals[1]);
+                        adjacent.add(flowers[flower.level][11]);
+                    } else {
+                        adjacent.add(flowers[flower.level][flower.flowerNumber-1].petals[1]);
+                        adjacent.add(flowers[flower.level][flower.flowerNumber-1]);
+                    }
+                    break;
+            }
+        }
+        
+        return adjacent;
+    }
+    
     static public ArrayList getAdjacentFlowers(int level, int flowerNumber) {
         ArrayList adjacent = new ArrayList();
         switch(flowerNumber) {
@@ -550,13 +616,48 @@ public class RelayController extends Thread {
     // Reactions
     static public void runPetalPropogation(KineticSequence ks) {
         System.out.println("running petal prop ");
-        ks.isReaction = true;
-        ks.started = true;
-        ArrayList sensorList = (ArrayList)ks.map.get("sensors");
         
-       if(!ks.started) {
+        ks.isReaction = true;
+        int[][][] states = null;
+        
+        if(!ks.started) {
+            ArrayList sensorList = (ArrayList)ks.map.get("sensors");
            // create a timings table
+           states = new int[3][12][3];
+           while(!sensorList.isEmpty()) {
+               int flowerNumber = (int)sensorList.remove(0) * 2;
+               for(int i=0; i<3; i++) {
+                   if(randomGenerator.nextBoolean()){
+                       flowers[0][flowerNumber].petals[i].relay.toggleState();
+                       states[0][flowerNumber][i] = 1;
+                   }
+               }  
+           }
+           ks.map.put("states", states);
+           ks.started = true;
+       } else {
+           states = (int[][][])ks.map.get("states");
        }
+        
+       for (int level = 0; level < 3; level++) {
+            for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
+                for (int petalNumber = 0; petalNumber < 3; petalNumber++) {
+                    switch(states[level][flowerNumber][petalNumber]) {
+                        case 1:
+                            if (System.currentTimeMillis() > flowers[level][flowerNumber].petals[petalNumber].relay.getLastTriggeredTime() + 2000) {
+                                ArrayList adjacentPetals = getAdjacentPetals(flowers[level][flowerNumber], flowers[level][flowerNumber].petals[petalNumber]);
+                                while (!adjacentPetals.isEmpty()) {
+                                    Petal petal = (Petal)adjacentPetals.remove(0);
+                                    Flower flower = (Flower)adjacentPetals.remove(0);
+                                    states[flower.level][flower.flowerNumber][// orientation array index]
+                                }
+                            }
+                    }
+                }
+            }
+       }
+       
+       
        ks.finished=true;
         
     }
@@ -564,10 +665,25 @@ public class RelayController extends Thread {
     // unfinished
     static public void runBeaksPropogation(KineticSequence ks) {
         System.out.println("running beaks prop ");
-        if(ks.add){System.out.println("adding");}
-        ks.isReaction = true;
-        ks.started = true;
-        ArrayList sensorList = (ArrayList)ks.map.get("sensors");
+//        ks.isReaction = true;
+//        long[][][] timings = null;
+//        
+//        if(!ks.started) {
+//            ArrayList sensorList = (ArrayList)ks.map.get("sensors");
+//           // create a timings table
+//           timings = new long[3][12][2];
+//           while(!sensorList.isEmpty()) {
+//               int flowerNumber = (int)sensorList.remove(0) * 2;
+//               flowers[0][flowerNumber].togglePetals();
+//               timings[0][flowerNumber][0] = System.currentTimeMillis();
+//               timings[0][flowerNumber][1] = 1;
+//           }
+//           ks.map.put("timings", timings);
+//           ks.started = true;
+//       } else {
+//           timings = (long[][][])ks.map.get("timings");
+//       }
+        
         ks.finished=true;
     }
     
