@@ -7,7 +7,10 @@ import java.math.*;
 
 /**
  *
- * @author Tyrone
+ * @author Ruvan
+ * 
+ * Notes:
+ * When adding I'm normally actually toggling, which is different and both behaviours should be present
  */
 public class RelayController extends Thread {
 
@@ -22,19 +25,20 @@ public class RelayController extends Thread {
     static Comparator<KineticSequence> queueComparator = new KineticSequenceComparator();
     static PriorityQueue<KineticSequence> kineticSequenceQueue = new PriorityQueue<KineticSequence>(10, queueComparator);    static Queue<Long> danceTimes = new LinkedList<>();
     static long lastReactionTime = 0;
-    static int reactionTimeout = 5000;
+    static int reactionTimeout = 300000; // 5 minutes
     static int reactionsPerHour = 4;
     static long lastQueueExecutionTime = 0;
     static long queueExecutionTimeout = 10000;
     static Random randomGenerator = new Random();
     static Date date = new Date();
     static Calendar calendar = Calendar.getInstance();
-    static int numberOfStills = 16;
+    static int numberOfStills = 18;
+    static int numReactions = 0;
     
     // Triangle / Relay
     static Relay[][] relayTable = new Relay[19][8];
     static Flower[][] flowers = new Flower[3][12];
-    static int[][] sensors = new int[2][25];
+    static int[][] sensors = new int[2][13]; //[2][13]
 
     public RelayController(Controlv2 ctrl, String port, int baud, String programName) {
         this.ctrl = ctrl;
@@ -57,11 +61,13 @@ public class RelayController extends Thread {
 
     public void run() {
         
-        int numReactions = 0;
         
         while (true) {
+                calendar = Calendar.getInstance();
+                
                 if (danceTimes.peek() != null && System.currentTimeMillis() > danceTimes.peek().longValue()) {
                 danceTimes.remove(); // remove element from queue
+                System.out.println("Starting new Dance");
                 // fill kinetic sequence queue
                 for(int i=0; i<10; i++) {
                     switch (randomGenerator.nextInt(numberOfStills-1)) {
@@ -132,6 +138,7 @@ public class RelayController extends Thread {
                             // Dinosaur foot
                             KineticSequence ks151 = new KineticSequence("runHalf", false, false);
                             KineticSequence ks152 = new KineticSequence("runHalf", false, true);
+                            ks152.started=true; // this should allow it to run straight after ks151
                             ks151.map = new HashMap<>();
                             ks152.map = new HashMap<>();
                             switch(randomGenerator.nextInt(3)) {
@@ -155,6 +162,12 @@ public class RelayController extends Thread {
                             kineticSequenceQueue.add(ks151);
                             kineticSequenceQueue.add(ks152);
                             break;
+                        case 16:
+                            kineticSequenceQueue.add(new KineticSequence("runStripes", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
+                            break;
+                        case 17:
+                            kineticSequenceQueue.add(new KineticSequence("runBands", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
+                            break;
                     }
                 }
                 
@@ -166,15 +179,14 @@ public class RelayController extends Thread {
             // maybe wait if a reaction has taken place
             // react to sensors should queue a new sequence to the front of the queue
             if (System.currentTimeMillis() > (lastReactionTime + reactionTimeout) && numReactions <= reactionsPerHour && (kineticSequenceQueue.isEmpty() || !kineticSequenceQueue.peek().isReaction)) {
-                reactionTimeout+=2000;
-                lastReactionTime = System.currentTimeMillis();
-                numReactions++;
                 reactToSensors();
             }
             
             // reset numReactions every hourish
-            if (calendar.get(calendar.MINUTE) == 5 || calendar.get(calendar.HOUR_OF_DAY) == 5 ) {
-                reactionTimeout = 5000;
+//            if (calendar.get(calendar.MINUTE) == 5 || calendar.get(calendar.HOUR_OF_DAY) == 5 ) {
+            if (calendar.get(calendar.MINUTE)%10 == 0 && numReactions!=0) { // resetting every 10 minutes for debugging
+                System.out.println("Resetting Sensor Count");
+                reactionTimeout = 300000;
                 numReactions = 0;
             }
             
@@ -184,7 +196,7 @@ public class RelayController extends Thread {
                 executeQueue();
                 lastQueueExecutionTime = System.currentTimeMillis();
             }
-            
+            System.out.println("numReactions = " + Integer.toString(numReactions));
         }
     }
 
@@ -254,39 +266,40 @@ public class RelayController extends Thread {
         // find if we had a triggered sensor and add it to an arraylist 
         ArrayList list = new ArrayList();
         for (int i = 0; i < 6; i++) {
+            System.out.println("Sensor " + Integer.toString(i) + " = " + Integer.toString(sensors[0][i]));
             if (sensors[0][i] > 254 && randomGenerator.nextBoolean()) {
                 list.add(i); // note should be passing an Integer rather than an int here
+                
+                System.out.println("Reacting to sensors");
             }
         }
         
-        // no longer needed as randomGenerator.nextBoolean() is in the statement above.
-//        // Randomly cull the list
-//        int numberTriggeredSensors = list.size();
-//        for (int i=0; i<numberTriggeredSensors; i++) {
-//            int sensorNumber = randomGenerator.nextInt(list.size()-1);
-//            if (randomGenerator.nextBoolean()) {
-//                list.remove(sensorNumber);
-//            }
-//        }
-        
         // Should randomly choose a reaction sequence here
         if (list.size() > 0) {
+            reactionTimeout+=120000; // 2 minutes
+            lastReactionTime = System.currentTimeMillis();
+            numReactions++;
             int reactionSelect = randomGenerator.nextInt(3);
             KineticSequence ks = null;
             boolean add = randomGenerator.nextBoolean();
             switch(reactionSelect) {
                 case 0: ks = new KineticSequence("runPetalPropogation", true, add);
+                System.out.println("Add Petal Propogation");
                     break;
                 case 1: ks = new KineticSequence("runBeaksPropogation", true, add); 
+                System.out.println("Add Beaks Propogation");
                     break;
                 case 2: ks = new KineticSequence("runBloomPropogation", true, add); 
+                System.out.println("Add Bloom Propogation");
                     break;
                 case 3: ks = new KineticSequence("runAllBloom", true, add);
+                System.out.println("Add All Bloom");
                     break;
             }
             ks.map = new HashMap<>();
             ks.map.put("sensors", list);
             kineticSequenceQueue.add(ks);
+            
         }
     }
 
@@ -356,34 +369,24 @@ public class RelayController extends Thread {
         }
         send(254);
         send(204);
-        sleep(1000); // this is a rather long wait, will have to experiment to find a suitable time
-        byte[] bytes = new byte[sensors[1].length];
+        sleep(800); // this is a rather long wait, will have to experiment to find a suitable time
+        byte[] bytes = new byte[(sensors[1].length * 2) + 1];
         int numberBytesRead = readLine(bytes);
-//        System.out.println("bytes read: " + Integer.toString(numberBytesRead));
         for(int i=1; i<bytes.length; i+=2) {
            
-            byte[] tempByte2 = new byte[2];
-            tempByte2[0]=bytes[i];
-            tempByte2[1]=bytes[i+1];
-            BigInteger bigInt = new BigInteger(tempByte2);
-            
             StringBuilder sb = new StringBuilder();
             sb.append(String.format("%02X", bytes[i+1]));
             sb.append(String.format("%02X", bytes[i]));
             
-            int hextoint = Integer.parseInt(sb.toString(), 16);
+            int hexToInt = Integer.parseInt(sb.toString(), 16);
             
-            //System.out.println(sb.toString());
-            int tempInt = bytes[i+1] << 8 | bytes[i];
+//            System.out.println(Integer.toString((int)((i-1)*0.5)) + " is: " + Integer.toString(hexToInt));
             
-//            System.out.println(Integer.toString((int)(i*0.5)) + " is: " + Integer.toString(bigInt.intValue()));
-            System.out.println(Integer.toString((int)((i-1)*0.5)) + " is: " + Integer.toString(tempInt) + " - " + sb.toString() + " - " + Integer.toString(hextoint));
-//            System.out.printf("%02X", bytes[i]);
-            if(Math.abs(sensors[0][i]-bigInt.intValue()) > 6) { // we consider the sensor state changed
-                sensors[0][i] = bigInt.intValue();
-                sensors[1][i] = 1;
+            if(Math.abs(sensors[0][(int)((i-1)*0.5)]-hexToInt) > 10) { // we consider the sensor state changed
+                sensors[0][(int)((i-1)*0.5)] = hexToInt;
+                sensors[1][(int)((i-1)*0.5)] = 1;
             } else {
-                sensors[1][i] = 0;
+                sensors[1][(int)((i-1)*0.5)] = 0;
             }
                 
         }
@@ -618,6 +621,10 @@ public class RelayController extends Thread {
             else if (head.sequenceName.equals("runChaos")) {runChaos(head);}
             else if (head.sequenceName.equals("runCheckerBoard")) {runCheckerBoard(head);}
             else if (head.sequenceName.equals("runHalf")) {runHalf(head);}
+            else if (head.sequenceName.equals("runAllBloom")) {runAllBloom(head);}
+            else if (head.sequenceName.equals("runStripes")) {runStripes(head);}
+            else if (head.sequenceName.equals("runBands")) {runBands(head);}
+            else  {turnOff(head);}
             // if the sequence is finished then remove it
             if(ctrl.getActivityLevel() != -1) {
                 if(head.finished) {kineticSequenceQueue.remove();}
@@ -649,7 +656,6 @@ public class RelayController extends Thread {
     // Reactions
     static public void runPetalPropogation(KineticSequence ks) {
         System.out.println("running petal prop ");
-        
         ks.isReaction = true;
         int[][][] states = null;
         
@@ -721,7 +727,9 @@ public class RelayController extends Thread {
     
     // unfinished
     static public void runBeaksPropogation(KineticSequence ks) {
-        System.out.println("running beaks prop ");
+        System.out.println("running beaks prop but actually");
+        runPetalPropogation(ks);
+//        ks.started = true;
 //        ks.isReaction = true;
 //        long[][][] timings = null;
 //        
@@ -820,6 +828,7 @@ public class RelayController extends Thread {
     
     static public void runAllBloom(KineticSequence ks) {
         System.out.println("running all bloom");
+        ks.started = true;
         for (int level = 0; level < 3; level++) {
             for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
                 flowers[level][flowerNumber].allOn();
@@ -985,7 +994,7 @@ public class RelayController extends Thread {
             relayTable[bank][0].setState(true);
         }
         // relay coil 12V supply
-        relayTable[0][1].setState(true);
+        relayTable[0][2].setState(true);
         updateRelays();
         ks.finished = true;
     }
@@ -1016,10 +1025,8 @@ public class RelayController extends Thread {
         System.out.println("running horizontals");
         if(!ks.add){clear();}
         for (int level = 0; level < 3; level++) {
-            
                 toggleBank(6 * level + 3);
                 toggleBank(6 * level + 4);
-            
         }
         ks.finished=true;
         updateRelays();
@@ -1065,35 +1072,67 @@ public class RelayController extends Thread {
     // Not finished
     static public void runHugeTriangle(KineticSequence ks) {
         System.out.println("running huge triangle");
+//        clear();
+//        int triangleTip = randomGenerator.nextInt(11);
+//        if (triangleTip % 2 == 0) { // up triangle
+//            for(int level=2; level>=0; level--) {
+//                
+//            }
+//        } else { // down triangle
+//            for(int level=0; level<3; level++) {
+//                
+//            }
+//        }
         ks.finished = true;
     }
     
+    static public void runStripes(KineticSequence ks) {
+        if(!ks.add) {clear();}
+        for(int triangleNumber=0; triangleNumber<12; triangleNumber++) {
+            if(randomGenerator.nextBoolean() && randomGenerator.nextBoolean()) {
+                for(int level=0; level<3; level++) {
+                    flowers[level][triangleNumber].togglePetals();
+                }
+            }
+        }   
+    }
+    
+    static public void runBands(KineticSequence ks) {
+        if(!ks.add) {clear();}
+        for(int level=0; level<3; level++) {
+            if(randomGenerator.nextBoolean()) {
+                for(int bank=0; bank<6; bank++) {
+                    toggleBank(level*6+bank+1);
+                }
+            }
+        }
+    }
     
     static public void runChaos(KineticSequence ks) {
         System.out.println("running chaos");
-        clear();
+        if (!ks.add) {clear();}
         for (int level = 0; level < 3; level++) {
             for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
                 switch ((int) ks.map.get("chaosType")) {
                     case 1:
                         for (int petalNumber = 0; petalNumber < 3; petalNumber++) {
                             if (randomGenerator.nextBoolean() && randomGenerator.nextBoolean()) {
-                                flowers[level][flowerNumber].petals[petalNumber].relay.setState(true);
+                                flowers[level][flowerNumber].petals[petalNumber].relay.toggleState();
                             }
                         }
                         break;
                     case 2:
                         for (int petalNumber = 0; petalNumber < 3; petalNumber++) {
                             if (randomGenerator.nextBoolean() && randomGenerator.nextBoolean() && randomGenerator.nextBoolean()) {
-                                flowers[level][flowerNumber].petals[petalNumber].relay.setState(true);
+                                flowers[level][flowerNumber].petals[petalNumber].relay.toggleState();
                                 Petal beakPetal = getBeakPetal(flowers[level][flowerNumber], flowers[level][flowerNumber].petals[petalNumber]);
-                                if(beakPetal!=null) {beakPetal.relay.setState(true);}
+                                if(beakPetal!=null) {beakPetal.relay.toggleState();}
                             }
                         }
                         break;
                     case 3:
                         if(randomGenerator.nextBoolean() && randomGenerator.nextBoolean()) {
-                            flowers[level][flowerNumber].allOn();
+                            flowers[level][flowerNumber].togglePetals();
                         }
                 }
 
