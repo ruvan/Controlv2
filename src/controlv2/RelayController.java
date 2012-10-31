@@ -371,11 +371,13 @@ public class RelayController extends Thread {
             sb.append(String.format("%02X", bytes[i+1]));
             sb.append(String.format("%02X", bytes[i]));
             
+            int hextoint = Integer.parseInt(sb.toString(), 16);
+            
             //System.out.println(sb.toString());
-            int tempInt = bytes[i] << 8 | bytes[i+1];
+            int tempInt = bytes[i+1] << 8 | bytes[i];
             
 //            System.out.println(Integer.toString((int)(i*0.5)) + " is: " + Integer.toString(bigInt.intValue()));
-            System.out.println(Integer.toString((int)((i-1)*0.5)) + " is: " + Integer.toString(tempInt) + " - " + sb.toString());
+            System.out.println(Integer.toString((int)((i-1)*0.5)) + " is: " + Integer.toString(tempInt) + " - " + sb.toString() + " - " + Integer.toString(hextoint));
 //            System.out.printf("%02X", bytes[i]);
             if(Math.abs(sensors[0][i]-bigInt.intValue()) > 6) { // we consider the sensor state changed
                 sensors[0][i] = bigInt.intValue();
