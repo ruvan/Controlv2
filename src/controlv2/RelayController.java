@@ -1087,6 +1087,7 @@ public class RelayController extends Thread {
     }
     
     static public void runStripes(KineticSequence ks) {
+        System.out.println("running stripes");
         if(!ks.add) {clear();}
         for(int triangleNumber=0; triangleNumber<12; triangleNumber++) {
             if(randomGenerator.nextBoolean() && randomGenerator.nextBoolean()) {
@@ -1098,6 +1099,7 @@ public class RelayController extends Thread {
     }
     
     static public void runBands(KineticSequence ks) {
+        System.out.println("running bands");
         if(!ks.add) {clear();}
         for(int level=0; level<3; level++) {
             if(randomGenerator.nextBoolean()) {
