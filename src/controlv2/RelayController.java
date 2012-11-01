@@ -23,10 +23,11 @@ public class RelayController extends Thread {
     static OutputStream relayOutputStream;
     static int sleepTime = 10000;
     static Comparator<KineticSequence> queueComparator = new KineticSequenceComparator();
-    static PriorityQueue<KineticSequence> kineticSequenceQueue = new PriorityQueue<KineticSequence>(10, queueComparator);    static Queue<Long> danceTimes = new LinkedList<>();
+    static PriorityQueue<KineticSequence> kineticSequenceQueue = new PriorityQueue<KineticSequence>(11, queueComparator);    
+    static Queue<Long> danceTimes = new LinkedList<>();
     static long lastReactionTime = 0;
-    static int reactionTimeout = 300000; // 5 minutes
-    static int reactionsPerHour = 4;
+    static int reactionTimeout = 60000; // 1 minutes
+    static int reactionsPerHour = 12;
     static long lastQueueExecutionTime = 0;
     static long queueExecutionTimeout = 10000;
     static Random randomGenerator = new Random();
@@ -192,7 +193,7 @@ public class RelayController extends Thread {
             
             // if it's been queueExecutionTimeout since queue execution then execute
             // such a structure currently will not work well with moving sequences unless we put || head.started in the if clause
-            if (System.currentTimeMillis() > lastQueueExecutionTime + queueExecutionTimeout || (!kineticSequenceQueue.isEmpty() && kineticSequenceQueue.peek().started)) {
+            if (System.currentTimeMillis() > lastQueueExecutionTime + queueExecutionTimeout || (!kineticSequenceQueue.isEmpty() && (kineticSequenceQueue.peek().started || kineticSequenceQueue.peek().isReaction))) {
                 executeQueue();
                 lastQueueExecutionTime = System.currentTimeMillis();
             }
@@ -276,7 +277,8 @@ public class RelayController extends Thread {
         
         // Should randomly choose a reaction sequence here
         if (list.size() > 0) {
-            reactionTimeout+=120000; // 2 minutes
+//            reactionTimeout+=120000; // 2 minutes
+            reactionTimeout=60000;
             lastReactionTime = System.currentTimeMillis();
             numReactions++;
             int reactionSelect = randomGenerator.nextInt(3);
@@ -298,6 +300,7 @@ public class RelayController extends Thread {
             }
             ks.map = new HashMap<>();
             ks.map.put("sensors", list);
+            ks.isReaction = true;
             kineticSequenceQueue.add(ks);
             
         }
@@ -440,7 +443,7 @@ public class RelayController extends Thread {
         }
         
         // Add third petal if it exists
-        if ((petal.orientation==5 && flower.level==2) || (petal.orientation==4 && flower.level==0)) {
+        if ((petal.orientation==5 && flower.level==0) || (petal.orientation==4 && flower.level==2)) {
             return adjacent;
         } else {
             switch(petal.orientation) {
@@ -666,9 +669,10 @@ public class RelayController extends Thread {
            while(!sensorList.isEmpty()) {
                int flowerNumber = (int)sensorList.remove(0) * 2;
                for(int i=0; i<3; i++) {
-                   if(randomGenerator.nextBoolean()){
+                   if(randomGenerator.nextBoolean()){ //lol! if it doesn't pick up anything here the system will hang
                        flowers[0][flowerNumber].petals[i].relay.toggleState();
                        states[0][flowerNumber][i] = 1;
+                       System.out.println("Petal number: " + Integer.toString(i));
                    }
                }  
            }
@@ -681,24 +685,30 @@ public class RelayController extends Thread {
        for (int level = 0; level < 3; level++) {
             for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
                 for (int petalNumber = 0; petalNumber < 3; petalNumber++) {
-                    if(states[level][flowerNumber][petalNumber] == 1) {
-                            if (System.currentTimeMillis() > flowers[level][flowerNumber].petals[petalNumber].relay.getLastTriggeredTime() + 2000) {
-                                ArrayList adjacentPetals = getAdjacentPetals(flowers[level][flowerNumber], flowers[level][flowerNumber].petals[petalNumber]);
-                                while (!adjacentPetals.isEmpty()) {
-                                    Petal petal = (Petal)adjacentPetals.remove(0);
-                                    Flower flower = (Flower)adjacentPetals.remove(0);
-                                    int orientationIndex;
-                                    if(petal.orientation == 5 || petal.orientation == 4) {orientationIndex = 0;} 
-                                    else if(petal.orientation == 7 || petal.orientation == 2) { orientationIndex = 1;}
-                                    else {orientationIndex = 2;}
+                    if (states[level][flowerNumber][petalNumber] == 1) {
+                        if (System.currentTimeMillis() > flowers[level][flowerNumber].petals[petalNumber].relay.getLastTriggeredTime() + 2000) {
+                            ArrayList adjacentPetals = getAdjacentPetals(flowers[level][flowerNumber], flowers[level][flowerNumber].petals[petalNumber]);
+                            while (!adjacentPetals.isEmpty()) {
+                                Petal petal = (Petal) adjacentPetals.remove(0);
+                                Flower flower = (Flower) adjacentPetals.remove(0);
+                                int orientationIndex;
+                                if (petal.orientation == 5 || petal.orientation == 4) {
+                                    orientationIndex = 0;
+                                } else if (petal.orientation == 7 || petal.orientation == 2) {
+                                    orientationIndex = 1;
+                                } else {
+                                    orientationIndex = 2;
+                                }
+                                if (states[flower.level][flower.flowerNumber][orientationIndex] == 0) {
                                     states[flower.level][flower.flowerNumber][orientationIndex] = 1;
                                     petal.relay.toggleState();
                                 }
-                            } else if (System.currentTimeMillis() > flowers[level][flowerNumber].petals[petalNumber].relay.getLastTriggeredTime() + 10000) {
-                                flowers[level][flowerNumber].petals[petalNumber].relay.toggleState();
-                                states[level][flowerNumber][petalNumber] = 2;
                             }
-                            
+                        } 
+                        if (System.currentTimeMillis() > flowers[level][flowerNumber].petals[petalNumber].relay.getLastTriggeredTime() + 10000) {
+                            flowers[level][flowerNumber].petals[petalNumber].relay.toggleState();
+                            states[level][flowerNumber][petalNumber] = 2;
+                        }
                     }
                 }
             }
@@ -973,15 +983,15 @@ public class RelayController extends Thread {
             }
         }
         updateRelays();
-
+        sleep(10000);
         // TODO: put in wait command, be weary of this pausing other aspects of totem.
 
         // turn off PSU's
-        for (int bank = 0; bank < 19; bank++) {
+        for (int bank = 1; bank < 19; bank++) {
             relayTable[bank][0].setState(false);
         }
         // relay coil 12V supply
-        relayTable[0][1].setState(false);
+        relayTable[0][2].setState(false);
         updateRelays();
         updateRelayStrokes();
         ks.finished = true;
@@ -990,7 +1000,7 @@ public class RelayController extends Thread {
     static public void turnOn(KineticSequence ks) {
         System.out.println("running turn on");
         // turn on all PSU's
-        for (int bank = 0; bank < 19; bank++) {
+        for (int bank = 1; bank < 19; bank++) {
             relayTable[bank][0].setState(true);
         }
         // relay coil 12V supply
@@ -1095,7 +1105,9 @@ public class RelayController extends Thread {
                     flowers[level][triangleNumber].togglePetals();
                 }
             }
-        }   
+        }  
+        updateRelays();
+        ks.finished=true;
     }
     
     static public void runBands(KineticSequence ks) {
@@ -1108,6 +1120,8 @@ public class RelayController extends Thread {
                 }
             }
         }
+        updateRelays();
+        ks.finished=true;
     }
     
     static public void runChaos(KineticSequence ks) {

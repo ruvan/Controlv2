@@ -47,10 +47,11 @@ public class Controlv2 {
         long currentTime = System.currentTimeMillis();
         
         while(true) {
+            
             // wait until the next second
             if(System.currentTimeMillis()-currentTime > 1000) {
                 currentTime=System.currentTimeMillis();
-                
+//                calendar = Calendar.getInstance();
 //                if(calendar.get(Calendar.HOUR_OF_DAY) > startOfDay-2 && activityLevel == 0) {
                 if(activityLevel == 0) {
                     // turn on
