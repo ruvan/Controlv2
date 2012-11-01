@@ -185,9 +185,9 @@ public class RelayController extends Thread {
             
             // reset numReactions every hourish
 //            if (calendar.get(calendar.MINUTE) == 5 || calendar.get(calendar.HOUR_OF_DAY) == 5 ) {
-            if (calendar.get(calendar.MINUTE)%10 == 0 && numReactions!=0) { // resetting every 10 minutes for debugging
+            if (calendar.get(calendar.MINUTE) == 1 && numReactions!=0) { // resetting every 10 minutes for debugging
                 System.out.println("Resetting Sensor Count");
-                reactionTimeout = 300000;
+                reactionTimeout = 60000;
                 numReactions = 0;
             }
             
@@ -278,7 +278,7 @@ public class RelayController extends Thread {
         // Should randomly choose a reaction sequence here
         if (list.size() > 0) {
 //            reactionTimeout+=120000; // 2 minutes
-            reactionTimeout=60000;
+            reactionTimeout+=60000;
             lastReactionTime = System.currentTimeMillis();
             numReactions++;
             int reactionSelect = randomGenerator.nextInt(3);
@@ -666,6 +666,7 @@ public class RelayController extends Thread {
             ArrayList sensorList = (ArrayList)ks.map.get("sensors");
            // create a timings table
            states = new int[3][12][3];
+           Boolean toggledPetal = false;
            while(!sensorList.isEmpty()) {
                int flowerNumber = (int)sensorList.remove(0) * 2;
                for(int i=0; i<3; i++) {
@@ -673,8 +674,15 @@ public class RelayController extends Thread {
                        flowers[0][flowerNumber].petals[i].relay.toggleState();
                        states[0][flowerNumber][i] = 1;
                        System.out.println("Petal number: " + Integer.toString(i));
+                       toggledPetal = true;
                    }
-               }  
+               }
+               if(!toggledPetal) {
+                   flowers[0][flowerNumber].petals[0].relay.toggleState();
+                   states[0][flowerNumber][0] = 1;
+                   System.out.println("Petal number: " + Integer.toString(0));
+                   toggledPetal=false;
+               }
            }
            ks.map.put("states", states);
            ks.started = true;
@@ -686,7 +694,7 @@ public class RelayController extends Thread {
             for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
                 for (int petalNumber = 0; petalNumber < 3; petalNumber++) {
                     if (states[level][flowerNumber][petalNumber] == 1) {
-                        if (System.currentTimeMillis() > flowers[level][flowerNumber].petals[petalNumber].relay.getLastTriggeredTime() + 2000) {
+                        if (System.currentTimeMillis() > flowers[level][flowerNumber].petals[petalNumber].relay.getLastTriggeredTime() + 4000) {
                             ArrayList adjacentPetals = getAdjacentPetals(flowers[level][flowerNumber], flowers[level][flowerNumber].petals[petalNumber]);
                             while (!adjacentPetals.isEmpty()) {
                                 Petal petal = (Petal) adjacentPetals.remove(0);
@@ -705,7 +713,7 @@ public class RelayController extends Thread {
                                 }
                             }
                         } 
-                        if (System.currentTimeMillis() > flowers[level][flowerNumber].petals[petalNumber].relay.getLastTriggeredTime() + 10000) {
+                        if (System.currentTimeMillis() > flowers[level][flowerNumber].petals[petalNumber].relay.getLastTriggeredTime() + 14000) {
                             flowers[level][flowerNumber].petals[petalNumber].relay.toggleState();
                             states[level][flowerNumber][petalNumber] = 2;
                         }
@@ -787,7 +795,7 @@ public class RelayController extends Thread {
         for (int level = 0; level < 3; level++) {
             for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
                 if (timings[level][flowerNumber][1] == 1) {
-                    if (System.currentTimeMillis() > timings[level][flowerNumber][0] + 2000) {
+                    if (System.currentTimeMillis() > timings[level][flowerNumber][0] + 4000) {
                         ArrayList adjacentFlowers = getAdjacentFlowers(level, flowerNumber);
                         while (!adjacentFlowers.isEmpty()) {
                             Flower flower = (Flower) adjacentFlowers.remove(0);
@@ -798,13 +806,13 @@ public class RelayController extends Thread {
                             }
                         }
                     }
-                    if(System.currentTimeMillis() > timings[level][flowerNumber][0] + 10000) {
+                    if(System.currentTimeMillis() > timings[level][flowerNumber][0] + 14000) {
                         // toggle back
                         flowers[level][flowerNumber].togglePetals();
                         timings[level][flowerNumber][1] = 2;
                         timings[level][flowerNumber][0] = System.currentTimeMillis();
                     }
-                } else if (timings[level][flowerNumber][1] == 2 && System.currentTimeMillis() > timings[level][flowerNumber][0] + 10000) {
+                } else if (timings[level][flowerNumber][1] == 2 && System.currentTimeMillis() > timings[level][flowerNumber][0] + 14000) {
                     ArrayList adjacentFlowers = getAdjacentFlowers(level, flowerNumber);
                     while (!adjacentFlowers.isEmpty()) {
                         Flower flower = (Flower)adjacentFlowers.remove(0);
