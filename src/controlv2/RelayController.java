@@ -197,7 +197,7 @@ public class RelayController extends Thread {
                 executeQueue();
                 lastQueueExecutionTime = System.currentTimeMillis();
             }
-            System.out.println("numReactions = " + Integer.toString(numReactions));
+//            System.out.println("numReactions = " + Integer.toString(numReactions));
         }
     }
 
@@ -254,20 +254,22 @@ public class RelayController extends Thread {
     }
     
     static public void updateDanceTimes(Long[] times) {
-        // in place of this for loop, danceTimes.addAll() can be used but requres times to be Long[] rather than long[]
-        
-            for (int i=0; i<times.length; i++) {
+        // in place of this for loop, danceTimes.addAll() can be used but requires times to be Long[] rather than long[]
+
+        for (int i = 0; i < times.length; i++) {
+            if (times[i] != null) {
                 danceTimes.add(times[i]);
                 date.setTime(times[i]);
                 System.out.println("Dance time " + i + " = " + date.toString());
             }
+        }
     }
     
     static public void reactToSensors() {
         // find if we had a triggered sensor and add it to an arraylist 
         ArrayList list = new ArrayList();
         for (int i = 0; i < 6; i++) {
-            System.out.println("Sensor " + Integer.toString(i) + " = " + Integer.toString(sensors[0][i]));
+//            System.out.println("Sensor " + Integer.toString(i) + " = " + Integer.toString(sensors[0][i]));
             if (sensors[0][i] > 254 && randomGenerator.nextBoolean()) {
                 list.add(i); // note should be passing an Integer rather than an int here
                 
@@ -278,7 +280,7 @@ public class RelayController extends Thread {
         // Should randomly choose a reaction sequence here
         if (list.size() > 0) {
 //            reactionTimeout+=120000; // 2 minutes
-            reactionTimeout+=60000;
+            reactionTimeout+=30000;
             lastReactionTime = System.currentTimeMillis();
             numReactions++;
             int reactionSelect = randomGenerator.nextInt(3);
@@ -986,9 +988,10 @@ public class RelayController extends Thread {
         System.out.println("running turn off");
         //pull in all actuators
         for (int bank = 1; bank < 19; bank++) {
-            for (int relay = 1; relay < 8; relay++) {
-                relayTable[bank][relay].setState(false);
-            }
+//            for (int relay = 1; relay < 8; relay++) {
+//                relayTable[bank][relay].setState(false);
+//            }
+            turnOffBank(bank);
         }
         updateRelays();
         sleep(10000);

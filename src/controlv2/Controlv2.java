@@ -52,13 +52,13 @@ public class Controlv2 {
             if(System.currentTimeMillis()-currentTime > 1000) {
                 currentTime=System.currentTimeMillis();
                 calendar = Calendar.getInstance();
-                if(calendar.get(Calendar.HOUR_OF_DAY) == startOfDay && activityLevel == 0) {
+                if(calendar.get(Calendar.HOUR_OF_DAY) >= startOfDay && activityLevel == 0) {
 //                if(activityLevel == 0) {
                     // turn on
                     activityLevel=1;
                     startOfDay();
                     System.out.println("Calling startOfDay");
-                } else if (calendar.get(Calendar.HOUR_OF_DAY) == endOfDay && activityLevel != -1) {
+                } else if (calendar.get(Calendar.HOUR_OF_DAY) == endOfDay && activityLevel == 1) {
                     // turn off
                     activityLevel=0;
                     // should empty rctrl's job queue and add a power off job
@@ -68,7 +68,6 @@ public class Controlv2 {
                 respondToWeather();
                 
                 updateStatus();
-                System.out.println(activityLevel);
             }
         }
     }
@@ -76,17 +75,19 @@ public class Controlv2 {
     private static void startOfDay() {
         // generate 10 random dance times -- note sequences need a start time
         // 
-        Long[] danceTimes = new Long[17*6];
+        Long[] danceTimes = new Long[25*6];
         Calendar tempCalendar = Calendar.getInstance();
         
 //        tempCalendar.add(Calendar.HOUR,1); 
 //        randomizeTime(tempCalendar, 28);
-        for (int i = 0; i < danceTimes.length; i++) {
+        int i = 0;
+        while(tempCalendar.get(Calendar.HOUR_OF_DAY) != endOfDay && i < danceTimes.length) {
             danceTimes[i] = new Long(tempCalendar.getTimeInMillis());
 //            tempCalendar.add(Calendar.MINUTE,75);
 //            randomizeTime(tempCalendar, 34);
             tempCalendar.add(Calendar.MINUTE,8);
             randomizeTime(tempCalendar, 4);
+            i++;
         }
         
         rctrl.updateDanceTimes(danceTimes);
