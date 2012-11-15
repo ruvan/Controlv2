@@ -85,7 +85,7 @@ public class Controlv2 {
             danceTimes[i] = new Long(tempCalendar.getTimeInMillis());
 //            tempCalendar.add(Calendar.MINUTE,75);
 //            randomizeTime(tempCalendar, 34);
-            tempCalendar.add(Calendar.MINUTE,8);
+            tempCalendar.add(Calendar.MINUTE,20);
             randomizeTime(tempCalendar, 4);
             i++;
         }

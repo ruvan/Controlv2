@@ -26,8 +26,8 @@ public class RelayController extends Thread {
     static PriorityQueue<KineticSequence> kineticSequenceQueue = new PriorityQueue<KineticSequence>(11, queueComparator);    
     static Queue<Long> danceTimes = new LinkedList<>();
     static long lastReactionTime = 0;
-    static int reactionTimeout = 60000; // 1 minutes
-    static int reactionsPerHour = 12;
+    static int reactionTimeout = 30000; // 1 minute
+    static int reactionsPerHour = 24;
     static long lastQueueExecutionTime = 0;
     static long queueExecutionTimeout = 10000;
     static Random randomGenerator = new Random();
