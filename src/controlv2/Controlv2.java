@@ -95,6 +95,7 @@ public class Controlv2 {
         }
         
         rctrl.updateDanceTimes(danceTimes);
+        laserShowStarted =false;
     }
     
     private static void randomizeTime(Calendar tempCalendar, int number) {
