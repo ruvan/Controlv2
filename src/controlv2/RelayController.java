@@ -26,7 +26,7 @@ public class RelayController extends Thread {
     static PriorityQueue<KineticSequence> kineticSequenceQueue = new PriorityQueue<KineticSequence>(11, queueComparator);    
     static Queue<Long> danceTimes = new LinkedList<>();
     static long lastReactionTime = 0;
-    static int reactionTimeout = 30000; // 1 minute
+    static int reactionTimeout = 30000; // 30 seconds
     static int reactionsPerHour = 24;
     static long lastQueueExecutionTime = 0;
     static long queueExecutionTimeout = 10000;
@@ -270,7 +270,7 @@ public class RelayController extends Thread {
         ArrayList list = new ArrayList();
         for (int i = 0; i < 6; i++) {
 //            System.out.println("Sensor " + Integer.toString(i) + " = " + Integer.toString(sensors[0][i]));
-            if (sensors[0][i] > 254 && randomGenerator.nextBoolean()) {
+            if (sensors[0][i] > 254){ //&& randomGenerator.nextBoolean()) {
                 list.add(i); // note should be passing an Integer rather than an int here
                 
                 System.out.println("Reacting to sensors");
@@ -280,7 +280,7 @@ public class RelayController extends Thread {
         // Should randomly choose a reaction sequence here
         if (list.size() > 0) {
 //            reactionTimeout+=120000; // 2 minutes
-            reactionTimeout+=30000;
+            //reactionTimeout+=30000;
             lastReactionTime = System.currentTimeMillis();
             numReactions++;
             int reactionSelect = randomGenerator.nextInt(3);
