@@ -24,6 +24,8 @@ public class Controlv2 {
     static String commandFileLoc;
     Boolean debug = true;
     static long commandFileModTime;
+    static MIDIController mctrl;
+    static Boolean laserShowStarted = false;
     
 
     /**
@@ -53,7 +55,6 @@ public class Controlv2 {
                 currentTime=System.currentTimeMillis();
                 calendar = Calendar.getInstance();
                 if(calendar.get(Calendar.HOUR_OF_DAY) >= startOfDay && activityLevel == 0) {
-//                if(activityLevel == 0) {
                     // turn on
                     activityLevel=1;
                     startOfDay();
@@ -62,6 +63,8 @@ public class Controlv2 {
                     // turn off
                     activityLevel=0;
                     // should empty rctrl's job queue and add a power off job
+                } else if (calendar.get(Calendar.HOUR_OF_DAY) == 20 && calendar.get(Calendar.HOUR_OF_DAY) == 0 && !laserShowStarted) {
+                    startLaserShow();
                 }
                 readCommandFile();
                 
@@ -180,6 +183,12 @@ public class Controlv2 {
                 ex.printStackTrace();
             }
         }
+    }
+    
+    public static void startLaserShow() {
+        mctrl = new MIDIController(rctrl);
+        mctrl.start();
+        laserShowStarted = true;
     }
     
     public int getActivityLevel() {
