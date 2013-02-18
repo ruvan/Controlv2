@@ -412,13 +412,13 @@ public class RelayController extends Thread {
     
     static public void openProjectionDoor() {
         // open projection door
-        relayTable[0][1].setState(true);
+        relayTable[0][0].setState(true);
         updateRelays();
     }
     
     static public void closeProjectionDoor() {
         // close projection door
-        relayTable[0][1].setState(false);
+        relayTable[0][0].setState(false);
         updateRelays();
     }
     
@@ -436,13 +436,13 @@ public class RelayController extends Thread {
     
     static public void turnOnLasers() {
         // turn on projection door power supply
-        relayTable[0][0].setState(true);
+        relayTable[0][1].setState(true);
         updateRelays();
     }
     
     static public void turnOffLasers() {
         // turn on projection door power supply
-        relayTable[0][0].setState(false);
+        relayTable[0][1].setState(false);
         updateRelays();
     }
     

@@ -20,7 +20,7 @@ public class MIDIController extends Thread {
     
     public MIDIController(RelayController rctrl) {
         this.rctrl = rctrl;
-        File midiFolder = new File("C:\\midiFiles");
+        File midiFolder = new File("C:\\Controlv2\\midiFiles");
         File[] matchingFiles = midiFolder.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name) {
                 return name.startsWith("midi") && name.endsWith("txt");
@@ -28,6 +28,7 @@ public class MIDIController extends Thread {
         });
         Random randomGenerator = new Random();
         MIDIFilePath = matchingFiles[randomGenerator.nextInt(matchingFiles.length)].getAbsolutePath();
+        //MIDIFilePath = "C:\\Controlv2\\midiFiles\\midi1.txt";
     }
     
     public void run() {
@@ -37,7 +38,7 @@ public class MIDIController extends Thread {
         sleep(30000);
         rctrl.turnOnLasers();
         sleep(30000);
-        ProcessBuilder pb = new ProcessBuilder(javaPath, "-jar", "C:\\Control\\dist\\control.jar", MIDIFilePath);
+        ProcessBuilder pb = new ProcessBuilder(javaPath, "-jar", "C:\\Control.jar", MIDIFilePath);
         pb.directory(new File("C:\\"));
         try {
             p = pb.start();
