@@ -265,6 +265,7 @@ public class RelayController extends Thread {
         }
     }
     
+    
     static public void reactToSensors() {
         // find if we had a triggered sensor and add it to an arraylist 
         ArrayList list = new ArrayList();
@@ -407,6 +408,42 @@ public class RelayController extends Thread {
         for (int relayNumber = 1; relayNumber < 8; relayNumber++) {
             relayTable[bank][relayNumber].setState(false);
         }
+    }
+    
+    static public void openProjectionDoor() {
+        // open projection door
+        relayTable[0][1].setState(true);
+        updateRelays();
+    }
+    
+    static public void closeProjectionDoor() {
+        // close projection door
+        relayTable[0][1].setState(false);
+        updateRelays();
+    }
+    
+    static public void turnOnProjectionDoorPower() {
+        // turn on projection door power supply
+        relayTable[0][3].setState(true);
+        updateRelays();
+    }
+    
+    static public void turnOffProjectionDoorPower() {
+        // turn on projection door power supply
+        relayTable[0][3].setState(false);
+        updateRelays();
+    }
+    
+    static public void turnOnLasers() {
+        // turn on projection door power supply
+        relayTable[0][0].setState(true);
+        updateRelays();
+    }
+    
+    static public void turnOffLasers() {
+        // turn on projection door power supply
+        relayTable[0][0].setState(false);
+        updateRelays();
     }
     
     static public void updateRelayStrokes() {
