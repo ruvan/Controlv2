@@ -6,6 +6,7 @@ package controlv2;
 
 import java.util.*;
 import java.io.*;
+import java.text.SimpleDateFormat;
 
 /**
  *
@@ -26,8 +27,13 @@ public class Controlv2 {
     static long commandFileModTime;
     static MIDIController mctrl;
     static Boolean laserShowStarted = false;
-    
-
+    static String logFilePath = "C:\\logs";
+    static File logFile;
+    static FileWriter logFileWriter;
+    static BufferedWriter logBufferedWriter;
+    static Calendar calendar;
+    static SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+    static SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss ");
     /**
      * Totem Behavioural Variables
      */
@@ -45,8 +51,10 @@ public class Controlv2 {
         commandFileModTime = new File(commandFileLoc).lastModified();
         
         Date date = new Date();
-        Calendar calendar = Calendar.getInstance();
+        calendar = Calendar.getInstance();
         long currentTime = System.currentTimeMillis();
+        int statusUpdateTimeout = 30;
+        int logFileTimeout = 60;
         
         while(true) {
             
@@ -58,20 +66,34 @@ public class Controlv2 {
                     // turn on
                     activityLevel=1;
                     startOfDay();
-                    System.out.println("Calling startOfDay");
+                    log("Calling startOfDay");
                 } else if (calendar.get(Calendar.HOUR_OF_DAY) == endOfDay && activityLevel == 1) {
                     // turn off
                     activityLevel=0;
-                    // should empty rctrl's job queue and add a power off job
-                } else if (calendar.get(Calendar.HOUR_OF_DAY) == 21 && calendar.get(Calendar.MINUTE) == 15 && !laserShowStarted) {
+                    // TODO: should empty rctrl's job queue and add a power off job
+                } else if (calendar.get(Calendar.HOUR_OF_DAY) == 20 && calendar.get(Calendar.HOUR_OF_DAY) == 0 && !laserShowStarted) {
                     startLaserShow();
                 }
-                
                 readCommandFile();
                 
                 respondToWeather();
                 
-                updateStatus();
+                // Only update the status file every 30 seconds.
+                if(statusUpdateTimeout==0) {
+                    updateStatus();
+                    statusUpdateTimeout=30;
+                } else {
+                    statusUpdateTimeout--;
+                }
+                
+                // Only update the log file every 60 seconds.
+                if(logFileTimeout==0) {
+                    log("Control is running");
+                    logFileTimeout=60;
+                } else {
+                    logFileTimeout--;
+                }
+                
             }
         }
     }
@@ -95,7 +117,34 @@ public class Controlv2 {
         }
         
         rctrl.updateDanceTimes(danceTimes);
-        laserShowStarted =false;
+    }
+    
+    public static void log(String logContent) {
+        // If the log file doesn't exist or we're using the wrong days
+        if (logFile == null || logFile.getName().equals(dateFormat.format(calendar.getTime()) + ".txt")) {
+            try {
+                // Change logFile to one with todays date as the file name
+                logFile = new File(logFilePath + dateFormat.format(calendar.getTime()) + ".txt");
+                if (!logFile.exists()) {
+                    // Create new log file
+
+                    logFile.createNewFile();
+
+                }
+                // Create FileWriter and BufferedWriter objects
+                logFileWriter = new FileWriter(logFile.getAbsoluteFile(), true);
+                logBufferedWriter = new BufferedWriter(logFileWriter);
+            } catch (IOException ex) {
+            }
+        }
+
+        // Write logContent to logFile and also push to system console
+        try {
+            String logLine = timeFormat.format(calendar.getTime()) + logContent;
+            System.out.println(logLine);
+            logBufferedWriter.write(logLine);
+        } catch (IOException ex) {
+        }
     }
     
     private static void randomizeTime(Calendar tempCalendar, int number) {
@@ -188,7 +237,7 @@ public class Controlv2 {
     }
     
     public static void startLaserShow() {
-        mctrl = new MIDIController(rctrl);
+        mctrl = new MIDIController(ctrl, rctrl);
         mctrl.start();
         laserShowStarted = true;
     }
