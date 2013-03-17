@@ -55,7 +55,7 @@ public class RelayController extends Thread {
             executeQueue();
             executeQueue();
         } catch (IOException ex) {
-            System.out.println("Could not initialize relay components");
+            ctrl.log("Could not initialize relay components");
         }    
     }
     
@@ -68,7 +68,7 @@ public class RelayController extends Thread {
                 
                 if (danceTimes.peek() != null && System.currentTimeMillis() > danceTimes.peek().longValue()) {
                 danceTimes.remove(); // remove element from queue
-                System.out.println("Starting new Dance");
+                ctrl.log("Starting new Dance");
                 // fill kinetic sequence queue
                 for(int i=0; i<10; i++) {
                     switch (randomGenerator.nextInt(numberOfStills-1)) {
@@ -186,7 +186,7 @@ public class RelayController extends Thread {
             // reset numReactions every hourish
 //            if (calendar.get(calendar.MINUTE) == 5 || calendar.get(calendar.HOUR_OF_DAY) == 5 ) {
             if (calendar.get(calendar.MINUTE) == 1 && numReactions!=0) { // resetting every 10 minutes for debugging
-                System.out.println("Resetting Sensor Count");
+                ctrl.log("Resetting Sensor Count");
                 reactionTimeout = 60000;
                 numReactions = 0;
             }
@@ -197,7 +197,7 @@ public class RelayController extends Thread {
                 executeQueue();
                 lastQueueExecutionTime = System.currentTimeMillis();
             }
-//            System.out.println("numReactions = " + Integer.toString(numReactions));
+//            ctrl.log("numReactions = " + Integer.toString(numReactions));
         }
     }
 
@@ -260,7 +260,7 @@ public class RelayController extends Thread {
             if (times[i] != null) {
                 danceTimes.add(times[i]);
                 date.setTime(times[i]);
-                System.out.println("Dance time " + i + " = " + date.toString());
+                ctrl.log("Dance time " + i + " = " + date.toString());
             }
         }
     }
@@ -270,11 +270,11 @@ public class RelayController extends Thread {
         // find if we had a triggered sensor and add it to an arraylist 
         ArrayList list = new ArrayList();
         for (int i = 0; i < 6; i++) {
-//            System.out.println("Sensor " + Integer.toString(i) + " = " + Integer.toString(sensors[0][i]));
+//            ctrl.log("Sensor " + Integer.toString(i) + " = " + Integer.toString(sensors[0][i]));
             if (sensors[0][i] > 254 && randomGenerator.nextBoolean()) {
                 list.add(i); // note should be passing an Integer rather than an int here
                 
-                System.out.println("Reacting to sensors");
+                ctrl.log("Reacting to sensors");
             }
         }
         
@@ -289,16 +289,16 @@ public class RelayController extends Thread {
             boolean add = randomGenerator.nextBoolean();
             switch(reactionSelect) {
                 case 0: ks = new KineticSequence("runPetalPropogation", true, add);
-                System.out.println("Add Petal Propogation");
+                ctrl.log("Add Petal Propogation");
                     break;
                 case 1: ks = new KineticSequence("runBeaksPropogation", true, add); 
-                System.out.println("Add Beaks Propogation");
+                ctrl.log("Add Beaks Propogation");
                     break;
                 case 2: ks = new KineticSequence("runBloomPropogation", true, add); 
-                System.out.println("Add Bloom Propogation");
+                ctrl.log("Add Bloom Propogation");
                     break;
                 case 3: ks = new KineticSequence("runAllBloom", true, add);
-                System.out.println("Add All Bloom");
+                ctrl.log("Add All Bloom");
                     break;
             }
             ks.map = new HashMap<>();
@@ -386,7 +386,7 @@ public class RelayController extends Thread {
             
             int hexToInt = Integer.parseInt(sb.toString(), 16);
             
-//            System.out.println(Integer.toString((int)((i-1)*0.5)) + " is: " + Integer.toString(hexToInt));
+//            ctrl.log(Integer.toString((int)((i-1)*0.5)) + " is: " + Integer.toString(hexToInt));
             
             if(Math.abs(sensors[0][(int)((i-1)*0.5)]-hexToInt) > 10) { // we consider the sensor state changed
                 sensors[0][(int)((i-1)*0.5)] = hexToInt;
@@ -697,7 +697,7 @@ public class RelayController extends Thread {
     // -------------------------------------------------------------------------------------------- //
     // Reactions
     static public void runPetalPropogation(KineticSequence ks) {
-        System.out.println("running petal prop ");
+        ctrl.log("running petal prop ");
         ks.isReaction = true;
         int[][][] states = null;
         
@@ -712,14 +712,14 @@ public class RelayController extends Thread {
                    if(randomGenerator.nextBoolean()){ //lol! if it doesn't pick up anything here the system will hang
                        flowers[0][flowerNumber].petals[i].relay.toggleState();
                        states[0][flowerNumber][i] = 1;
-                       System.out.println("Petal number: " + Integer.toString(i));
+                       ctrl.log("Petal number: " + Integer.toString(i));
                        toggledPetal = true;
                    }
                }
                if(!toggledPetal) {
                    flowers[0][flowerNumber].petals[0].relay.toggleState();
                    states[0][flowerNumber][0] = 1;
-                   System.out.println("Petal number: " + Integer.toString(0));
+                   ctrl.log("Petal number: " + Integer.toString(0));
                    toggledPetal=false;
                }
            }
@@ -784,7 +784,7 @@ public class RelayController extends Thread {
     
     // unfinished
     static public void runBeaksPropogation(KineticSequence ks) {
-        System.out.println("running beaks prop but actually");
+        ctrl.log("running beaks prop but actually");
         runPetalPropogation(ks);
 //        ks.started = true;
 //        ks.isReaction = true;
@@ -811,7 +811,7 @@ public class RelayController extends Thread {
     
     // bloom propagation will not toggle, it will bloom
     static public void runBloomPropogation(KineticSequence ks) {
-        System.out.println("running bloom prop ");
+        ctrl.log("running bloom prop ");
         ks.isReaction = true;
         long[][][] timings = null;
         ArrayList sensorList = (ArrayList)ks.map.get("sensors");
@@ -884,7 +884,7 @@ public class RelayController extends Thread {
     }
     
     static public void runAllBloom(KineticSequence ks) {
-        System.out.println("running all bloom");
+        ctrl.log("running all bloom");
         ks.started = true;
         for (int level = 0; level < 3; level++) {
             for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
@@ -920,7 +920,7 @@ public class RelayController extends Thread {
             }
             if (triggered) {
                 updateRelays();
-//                System.out.println("Sleeping sensors for 7 seconds");
+//                ctrl.log("Sleeping sensors for 7 seconds");
 //                sleep(7000);
             } else {
                 sleep(100);
@@ -938,7 +938,7 @@ public class RelayController extends Thread {
         }
 
         if (ks.map.get("stepNumber") == 1) {
-            System.out.println("Starting diagonal chase");
+            ctrl.log("Starting diagonal chase");
             for (int level = 0; level < 3; level++) {
                 turnOnBank(6 * level + 1);
                 turnOnBank(6 * level + 6);
@@ -984,7 +984,7 @@ public class RelayController extends Thread {
     }
 
     static public void runFlowerChase() {
-        System.out.println("Starting chase bloom");
+        ctrl.log("Starting chase bloom");
         for (int level = 0; level < 3; level++) {
             for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
                 flowers[level][flowerNumber].allOn();
@@ -1004,7 +1004,7 @@ public class RelayController extends Thread {
         }
         updateRelays();
         sleep(sleepTime);
-        System.out.println("Starting all on off");
+        ctrl.log("Starting all on off");
         for (int level = 0; level < 3; level++) {
             for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
                 flowers[level][flowerNumber].allOn();
@@ -1022,7 +1022,7 @@ public class RelayController extends Thread {
     }
 
     static public void turnOff(KineticSequence ks) {
-        System.out.println("running turn off");
+        ctrl.log("running turn off");
         //pull in all actuators
         for (int bank = 1; bank < 19; bank++) {
 //            for (int relay = 1; relay < 8; relay++) {
@@ -1046,7 +1046,7 @@ public class RelayController extends Thread {
     }
 
     static public void turnOn(KineticSequence ks) {
-        System.out.println("running turn on");
+        ctrl.log("running turn on");
         // turn on all PSU's
         for (int bank = 1; bank < 19; bank++) {
             relayTable[bank][0].setState(true);
@@ -1058,7 +1058,7 @@ public class RelayController extends Thread {
     }
     
     static public void runRightDiagonals(KineticSequence ks) {
-        System.out.println("running right diag");
+        ctrl.log("running right diag");
         if(!ks.add) {clear();}
         for (int level = 0; level < 3; level++) {
                 toggleBank(6 * level + 1);
@@ -1069,7 +1069,7 @@ public class RelayController extends Thread {
     }
     
     static public void runLeftDiagonals(KineticSequence ks) {
-        System.out.println("running left diag");
+        ctrl.log("running left diag");
         if(!ks.add) {clear();}
         for (int level = 0; level < 3; level++) {
                 toggleBank(6 * level + 2);
@@ -1080,7 +1080,7 @@ public class RelayController extends Thread {
     }
     
     static public void runHorizontals(KineticSequence ks) {
-        System.out.println("running horizontals");
+        ctrl.log("running horizontals");
         if(!ks.add){clear();}
         for (int level = 0; level < 3; level++) {
                 toggleBank(6 * level + 3);
@@ -1091,7 +1091,7 @@ public class RelayController extends Thread {
     }
     
     static public void runBothDiagonals(KineticSequence ks) {
-        System.out.println("running both diag");
+        ctrl.log("running both diag");
         KineticSequence r = new KineticSequence("runRightDiagonals", false, ks.add);
         KineticSequence l = new KineticSequence("runLeftDiagonals", false, true);
         runRightDiagonals(r);
@@ -1101,7 +1101,7 @@ public class RelayController extends Thread {
     }
     
     static public void runLeftDandH(KineticSequence ks) {
-        System.out.println("running left d and h");
+        ctrl.log("running left d and h");
         KineticSequence h = new KineticSequence("runHorizontals", false, ks.add);
         KineticSequence l = new KineticSequence("runLeftDiagonals", false, true);
         runHorizontals(h);
@@ -1111,7 +1111,7 @@ public class RelayController extends Thread {
     }
     
     static public void runRightDandH(KineticSequence ks) {
-        System.out.println("running right d and h");
+        ctrl.log("running right d and h");
         KineticSequence h = new KineticSequence("runHorizontals", false, ks.add);
         KineticSequence r = new KineticSequence("runRightDiagonals", false, true);
         runHorizontals(h);
@@ -1121,7 +1121,7 @@ public class RelayController extends Thread {
     }
     
     static public void runBlank(KineticSequence ks) {
-        System.out.println("running blank");
+        ctrl.log("running blank");
         clear();
         updateRelays();
         ks.finished=true;
@@ -1129,7 +1129,7 @@ public class RelayController extends Thread {
     
     // Not finished
     static public void runHugeTriangle(KineticSequence ks) {
-        System.out.println("running huge triangle");
+        ctrl.log("running huge triangle");
 //        clear();
 //        int triangleTip = randomGenerator.nextInt(11);
 //        if (triangleTip % 2 == 0) { // up triangle
@@ -1145,7 +1145,7 @@ public class RelayController extends Thread {
     }
     
     static public void runStripes(KineticSequence ks) {
-        System.out.println("running stripes");
+        ctrl.log("running stripes");
         if(!ks.add) {clear();}
         for(int triangleNumber=0; triangleNumber<12; triangleNumber++) {
             if(randomGenerator.nextBoolean() && randomGenerator.nextBoolean()) {
@@ -1159,7 +1159,7 @@ public class RelayController extends Thread {
     }
     
     static public void runBands(KineticSequence ks) {
-        System.out.println("running bands");
+        ctrl.log("running bands");
         if(!ks.add) {clear();}
         for(int level=0; level<3; level++) {
             if(randomGenerator.nextBoolean()) {
@@ -1173,7 +1173,7 @@ public class RelayController extends Thread {
     }
     
     static public void runChaos(KineticSequence ks) {
-        System.out.println("running chaos");
+        ctrl.log("running chaos");
         if (!ks.add) {clear();}
         for (int level = 0; level < 3; level++) {
             for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
@@ -1207,7 +1207,7 @@ public class RelayController extends Thread {
     }
     
     static public void runCheckerBoard(KineticSequence ks) {
-        System.out.println("running checkerboard");
+        ctrl.log("running checkerboard");
         clear();
         for (int level = 0; level < 3; level++) {
             for (int flowerNumber = 0; flowerNumber < 12; flowerNumber++) {
@@ -1227,7 +1227,7 @@ public class RelayController extends Thread {
     }
             
     static public void runHalf(KineticSequence ks) {
-        System.out.println("running Half");
+        ctrl.log("running Half");
         if(!ks.add) { clear(); }
         int orientationNumber = (int)ks.map.get("orientationNumber");
         
