@@ -27,7 +27,7 @@ public class Controlv2 {
     static long commandFileModTime;
     static MIDIController mctrl;
     static Boolean laserShowStarted = false;
-    static String logFilePath = "C:\\Totem logs";
+    static String logFilePath = "C:\\Totem logs\\";
     static File logFile;
     static FileWriter logFileWriter;
     static BufferedWriter logBufferedWriter;
@@ -47,11 +47,12 @@ public class Controlv2 {
      */
     public static void main(String[] args) {
         ctrl = new Controlv2();
+        calendar = Calendar.getInstance();
         loadConfig(args[0]);
         commandFileModTime = new File(commandFileLoc).lastModified();
         
         Date date = new Date();
-        calendar = Calendar.getInstance();
+        
         long currentTime = System.currentTimeMillis();
         int statusUpdateTimeout = 30;
         int logFileTimeout = 60;
@@ -123,6 +124,10 @@ public class Controlv2 {
         // If the log file doesn't exist or we're using the wrong days
         if (logFile == null || logFile.getName().equals(dateFormat.format(calendar.getTime()) + ".txt")) {
             try {
+                // close an already open file
+                if(logFile!=null) {
+                    logBufferedWriter.close();
+                }
                 // Change logFile to one with todays date as the file name
                 logFile = new File(logFilePath + dateFormat.format(calendar.getTime()) + ".txt");
                 if (!logFile.exists()) {
@@ -140,9 +145,10 @@ public class Controlv2 {
 
         // Write logContent to logFile and also push to system console
         try {
-            String logLine = timeFormat.format(calendar.getTime()) + logContent;
+            String logLine = timeFormat.format(calendar.getTime()) + logContent + System.getProperty("line.separator");
             System.out.println(logLine);
             logBufferedWriter.write(logLine);
+            logBufferedWriter.flush();
         } catch (IOException ex) {
         }
     }
