@@ -1,0 +1,365 @@
+############################################################
+#
+# Translight Laser Show - Version 01
+# Geoffrey Drake-Brockman 2013
+#
+# Device 0 = LP 1 laser control PC for LH screen
+# Device 1 = LP 2 laser control PC for RH screen
+#
+# Syntax for a note is: 
+# note,device,channel,MIDI note,onoff,waittime
+# device [0 or 1],channel [generally 1]
+# MIDI note [0 to 127],onoff ["on" or "off"],waittime in ms
+#
+# Syntax For a CC MIDI slider is: 
+# cc,[channel],[slider number],[slider value],[wait time]
+# eg cc,1,24,54,2000
+#
+# MIDI Note 127 is set to MIDI special key "Play" on LivePro
+#
+# LivePro Page Structure:
+#
+# Page 1 - Surface
+# Page 2 - Endings
+# Page 3 - Dances i
+# Page 4 - Dances ii
+# Page 5 - Dances iii
+# Page 6 - Origins
+# Page 7 - Cilia
+# Page 8 - Snakes
+# Page 9 - Triangles (LP1 only)
+# Page 10 - Traangles (LP2 only)
+#
+#
+#############################################################
+#
+# START PROJECTING
+#
+# Set Play to On on Device 0.
+note,0,1,127,on,10
+note,0,1,127,off,0
+#
+# Set Play to On on Device 1.
+note,1,1,127,on,10
+note,1,1,127,off,0
+#
+#############################################################
+#
+# TRIANGLES
+#
+# Temp Jump to Page 9 or 10 - Triangles
+note,0,1,119,on,0
+note,1,1,120,on,0
+#
+# Play Trangles Recording A for 60 Sec
+note,0,1,84,on,0
+note,1,1,84,on,60000
+note,0,1,84,off,0
+note,1,1,84,off,0
+#
+# Play Trangles Recording B for 60 Sec
+note,0,1,85,on,0
+note,1,1,85,on,60000
+note,0,1,85,off,0
+note,1,1,85,off,0
+#
+# Play Trangles Recording C for 60 Sec
+note,0,1,86,on,0
+note,1,1,86,on,60000
+note,0,1,86,off,0
+note,1,1,86,off,0
+#
+# Play Trangles Recording D for 60 Sec
+note,0,1,87,on,0
+note,1,1,87,on,60000
+note,0,1,87,off,0
+note,1,1,87,off,0
+#
+# Play Trangles to Snakes Recording X for 58 Sec
+# up to 120s for device 0, 60s for device 1
+#
+note,0,1,89,on,0
+note,1,1,89,on,58000
+note,0,1,89,off,0
+note,1,1,89,off,0
+#
+# Play Trangles to Snakes Recording Y for  Sec
+#note,0,1,90,on,0
+#note,1,1,90,on,58000
+#note,0,1,90,off,0
+#note,1,1,90,off,0
+#
+# End of Jump to Page 9 or 10
+note,0,1,119,off,0
+note,1,1,120,off,0
+#
+######################################################
+#
+# SNAKES
+#
+# Temp Jump to Page 8 - Snakes
+note,0,1,118,on,0
+note,1,1,118,on,0
+#
+# Play Snakes Recording A for 60 Sec
+note,0,1,84,on,0
+note,1,1,84,on,60000
+note,0,1,84,off,0
+note,1,1,84,off,0
+#
+# Play Snakes Recording B for 60 Sec
+note,0,1,85,on,0
+note,1,1,85,on,60000
+note,0,1,85,off,0
+note,1,1,85,off,0
+#
+# Play Snakes Recording C for 60 Sec
+note,0,1,86,on,0
+note,1,1,86,on,60000
+note,0,1,86,off,0
+note,1,1,86,off,0
+#
+# Play Snakes Recording D for 60 Sec
+note,0,1,87,on,0
+note,1,1,87,on,60000
+note,0,1,87,off,0
+note,1,1,87,off,0
+#
+# End of Jump to Page 8
+note,0,1,118,off,0
+note,1,1,118,off,0
+#
+##################################################
+#
+# CILIA
+#
+# Temp Jump to Page 7 - Cilia
+note,0,1,117,on,0
+note,1,1,117,on,0
+#
+# Play Cilia Recording A for 120 Sec
+note,0,1,84,on,0
+note,1,1,84,on,120000
+note,0,1,84,off,0
+note,1,1,84,off,0
+#
+# Play Cilia Recording B for 120 Sec
+note,0,1,85,on,0
+note,1,1,85,on,120000
+note,0,1,85,off,0
+note,1,1,85,off,0
+#
+# Play Cilia Recording C for 120 Sec
+note,0,1,86,on,0
+note,1,1,86,on,120000
+note,0,1,86,off,0
+note,1,1,86,off,0
+#
+# End of Jump to Page 7
+note,0,1,117,off,0
+note,1,1,117,off,0
+#
+##################################################
+#
+# SURFACE
+#
+# Temp Jump to Page 1 - Surface
+note,0,1,111,on,10
+note,1,1,111,on,10
+#
+# Play Surface Recording A for 43 Sec
+note,0,1,11,on,0
+note,1,1,11,on,43000
+note,0,1,11,off,0
+note,1,1,11,off,0
+#
+# Play Surface Recording B for 42 Sec
+note,0,1,23,on,0
+note,1,1,23,on,43000
+note,0,1,23,off,0
+note,1,1,23,off,0
+#
+# Play Surface Recording C for 43 Sec
+note,0,1,35,on,0
+note,1,1,35,on,43000
+note,0,1,35,off,0
+note,1,1,35,off,0
+#
+# Play Surface Recording D for 43 Sec
+note,0,1,47,on,0
+note,1,1,47,on,43000
+note,0,1,47,off,0
+note,1,1,47,off,0
+#
+# End of Jump to Page 1
+note,0,1,111,off,10
+note,1,1,111,off,10
+#
+#####################################################
+#
+# ORIGINS
+#
+# Temp Jump to Page 6 - Origins
+note,0,1,116,on,10
+note,1,1,116,on,10
+#
+# Play Origins Recording A for 120 Sec
+note,0,1,84,on,0
+note,1,1,84,on,120000
+note,0,1,84,off,0
+note,1,1,84,off,0
+#
+# Play Origins Recording B for 120 Sec
+note,0,1,85,on,0
+note,1,1,87,on,120000
+note,0,1,85,off,0
+note,1,1,87,off,0
+#
+# Play Origins Recording C for 120 Sec
+note,0,1,86,on,0
+note,1,1,86,on,120000
+note,0,1,86,off,0
+note,1,1,86,off,0
+#
+# Play Origins Recording D for 120 Sec
+note,0,1,87,on,0
+note,1,1,85,on,120000
+note,0,1,87,off,0
+note,1,1,85,off,0
+#
+# End of Jump to Page 6
+note,0,1,116,off,10
+note,1,1,116,off,10
+#
+######################################################
+#
+# DANCES I
+#
+# Temp Jump to Page 3 - Dances (i)
+note,0,1,113,on,10
+note,1,1,113,on,10
+#
+# Play Dances Recording A for 120 Sec
+note,0,1,84,on,0
+note,1,1,84,on,120000
+note,0,1,84,off,0
+note,1,1,84,off,0
+#
+# Play Dances Recording B for 120 Sec
+note,0,1,85,on,0
+note,1,1,85,on,120000
+note,0,1,85,off,0
+note,1,1,85,off,0
+#
+# Play Dances Recording C for 120 Sec
+note,0,1,86,on,0
+note,1,1,86,on,120000
+note,0,1,86,off,0
+note,1,1,86,off,0
+#
+# Play Dances Recording D for 120 Sec
+note,0,1,87,on,0
+note,1,1,87,on,120000
+note,0,1,87,off,0
+note,1,1,87,off,0
+#
+# End of Jump to Page 3
+note,0,1,113,off,10
+note,1,1,113,off,10
+#
+#
+######################################################
+#
+# DANCES II
+#
+# Temp Jump to Page 4 - Dances (ii)
+note,0,1,114,on,10
+note,1,1,114,on,10
+#
+# Play Dances Recording A for 120 Sec
+note,0,1,84,on,0
+note,1,1,85,on,120000
+note,0,1,84,off,0
+note,1,1,85,off,0
+#
+# Play Dances Recording B for 120 Sec
+note,0,1,85,on,0
+note,1,1,87,on,120000
+note,0,1,85,off,0
+note,1,1,87,off,0
+#
+# Play Dances Recording C for 120 Sec
+note,0,1,86,on,0
+note,1,1,86,on,120000
+note,0,1,86,off,0
+note,1,1,86,off,0
+#
+# Play Dances Recording D for 120 Sec
+note,0,1,87,on,0
+note,1,1,87,on,120000
+note,0,1,87,off,0
+note,1,1,87,off,0
+#
+# End of Jump to Page 4
+note,0,1,114,off,10
+note,1,1,114,off,10
+#
+#######################################################
+#
+# DANCES III
+#
+# Temp Jump to Page 5 - Dances (iii)
+note,0,1,115,on,10
+note,1,1,115,on,10
+#
+# Play Dances Recording A for 120 Sec
+note,0,1,84,on,0
+note,1,1,84,on,120000
+note,0,1,84,off,0
+note,1,1,84,off,0
+#
+# Play Dances Recording B for 120 Sec
+note,0,1,85,on,0
+note,1,1,85,on,120000
+note,0,1,85,off,0
+note,1,1,85,off,0
+#
+# Play Dances Recording C for 120 Sec
+note,0,1,86,on,0
+note,1,1,86,on,120000
+note,0,1,86,off,0
+note,1,1,86,off,0
+#
+# Play Dances Recording D for 120 Sec
+note,0,1,87,on,0
+note,1,1,87,on,120000
+note,0,1,87,off,0
+note,1,1,87,off,0
+#
+# End of Jump to Page 5
+note,0,1,115,off,10
+note,1,1,115,off,10
+#
+#######################################################
+#
+# ENDINGS
+#
+# Temp Jump to Page 2 - Endings
+note,0,1,112,on,10
+note,1,1,112,on,10
+#
+# Play Endings Recording A for 120 Sec
+note,0,1,84,on,0
+note,1,1,84,on,120000
+note,0,1,84,off,0
+note,1,1,84,off,0
+#
+# Play Endings Recording B for 120 Sec
+#note,0,1,85,on,0
+#note,1,1,85,on,120000
+#note,0,1,85,off,0
+#note,1,1,85,off,0
+#
+# End of Jump to Page 2
+note,0,1,112,off,10
+note,1,1,112,off,10

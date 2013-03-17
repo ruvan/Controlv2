@@ -16,7 +16,7 @@ public class MIDIController extends Thread {
     Controlv2 ctrl;
     RelayController rctrl;
     String MIDIFilePath;
-    String MIDIStopFilePath = "C:\\midi\\stopfile.midi";
+    String MIDIStopFilePath = "C:\\midi\\MIDI_Shutdown.txt";
     String javaPath = "C:\\Program Files\\Java\\jre7\\bin\\java.exe";
     Process p;
     Process off;

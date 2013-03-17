@@ -27,7 +27,7 @@ public class Controlv2 {
     static long commandFileModTime;
     static MIDIController mctrl;
     static Boolean laserShowStarted = false;
-    static String logFilePath = "C:\\logs";
+    static String logFilePath = "C:\\Totem logs";
     static File logFile;
     static FileWriter logFileWriter;
     static BufferedWriter logBufferedWriter;
