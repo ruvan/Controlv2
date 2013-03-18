@@ -30,6 +30,8 @@ public class RelayController extends Thread {
     static int reactionsPerHour = 24;
     static long lastQueueExecutionTime = 0;
     static long queueExecutionTimeout = 10000;
+    static long lastLogFileTime = 0;
+    static long logFileTimeout = 60000;
     static Random randomGenerator = new Random();
     static Date date = new Date();
     static Calendar calendar = Calendar.getInstance();
@@ -179,15 +181,16 @@ public class RelayController extends Thread {
             // react to inputs
             // maybe wait if a reaction has taken place
             // react to sensors should queue a new sequence to the front of the queue
-            if (System.currentTimeMillis() > (lastReactionTime + reactionTimeout) && numReactions <= reactionsPerHour && (kineticSequenceQueue.isEmpty() || !kineticSequenceQueue.peek().isReaction)) {
+//            if (System.currentTimeMillis() > (lastReactionTime + reactionTimeout) && numReactions <= reactionsPerHour && (kineticSequenceQueue.isEmpty() || !kineticSequenceQueue.peek().isReaction)) {
+            if (System.currentTimeMillis() > (lastReactionTime + reactionTimeout) && (kineticSequenceQueue.isEmpty() || !kineticSequenceQueue.peek().isReaction)) {
                 reactToSensors();
             }
             
             // reset numReactions every hourish
 //            if (calendar.get(calendar.MINUTE) == 5 || calendar.get(calendar.HOUR_OF_DAY) == 5 ) {
-            if (calendar.get(calendar.MINUTE) == 1 && numReactions!=0) { // resetting every 10 minutes for debugging
+            if (calendar.get(calendar.MINUTE) == 1 && calendar.get(calendar.HOUR_OF_DAY) == 1 && numReactions!=0) { // resetting every 10 minutes for debugging
                 ctrl.log("Resetting Sensor Count");
-                reactionTimeout = 60000;
+                reactionTimeout = 30000;
                 numReactions = 0;
             }
             
@@ -198,6 +201,13 @@ public class RelayController extends Thread {
                 lastQueueExecutionTime = System.currentTimeMillis();
             }
 //            ctrl.log("numReactions = " + Integer.toString(numReactions));
+            
+            // Only update the log file every 60 seconds.
+                if(System.currentTimeMillis() > lastLogFileTime + logFileTimeout) {
+                    ctrl.log("RelayController is running");
+                    lastLogFileTime=System.currentTimeMillis();
+                }
+            
         }
     }
 
@@ -271,19 +281,20 @@ public class RelayController extends Thread {
         ArrayList list = new ArrayList();
         for (int i = 0; i < 6; i++) {
 //            ctrl.log("Sensor " + Integer.toString(i) + " = " + Integer.toString(sensors[0][i]));
-            if (sensors[0][i] > 254 && randomGenerator.nextBoolean()) {
+//            if (sensors[0][i] > 254 && randomGenerator.nextBoolean()) {
+                if (sensors[0][i] > 254) {
                 list.add(i); // note should be passing an Integer rather than an int here
                 
-                ctrl.log("Reacting to sensors");
+                ctrl.log("sensor " + Integer.toString(i) + " was triggered");
             }
         }
         
         // Should randomly choose a reaction sequence here
         if (list.size() > 0) {
-//            reactionTimeout+=120000; // 2 minutes
-            reactionTimeout+=30000;
             lastReactionTime = System.currentTimeMillis();
             numReactions++;
+            ctrl.log("Starting reaction");
+            ctrl.log("Number of reactions so far today = " + Integer.toString(numReactions));
             int reactionSelect = randomGenerator.nextInt(3);
             KineticSequence ks = null;
             boolean add = randomGenerator.nextBoolean();

@@ -7,6 +7,9 @@ package controlv2;
 import java.util.*;
 import java.io.*;
 import java.text.SimpleDateFormat;
+import javax.mail.*;
+import javax.mail.internet.*;
+import javax.activation.*;
 
 /**
  *
@@ -82,7 +85,7 @@ public class Controlv2 {
                 // Only update the status file every 30 seconds.
                 if(statusUpdateTimeout==0) {
                     updateStatus();
-                    statusUpdateTimeout=30;
+                    statusUpdateTimeout=10;
                 } else {
                     statusUpdateTimeout--;
                 }
@@ -122,11 +125,15 @@ public class Controlv2 {
     
     public static void log(String logContent) {
         // If the log file doesn't exist or we're using the wrong days
-        if (logFile == null || logFile.getName().equals(dateFormat.format(calendar.getTime()) + ".txt")) {
+        if (logFile == null || !logFile.getName().equals(dateFormat.format(calendar.getTime()) + ".txt")) {
             try {
                 // close an already open file
                 if(logFile!=null) {
                     logBufferedWriter.close();
+                    
+                    // Send Geoffrey an email here
+                    email(logFile);
+                    
                 }
                 // Change logFile to one with todays date as the file name
                 logFile = new File(logFilePath + dateFormat.format(calendar.getTime()) + ".txt");
@@ -328,5 +335,54 @@ public class Controlv2 {
             }
     }
      
+    static public void email(File logFile) {
+        String SMTP_HOST_NAME = "smtp.gmail.com";
+        String SMTP_PORT = "587";
+        final String SMTP_FROM_ADDRESS = "gruvy.456@gmail.com";
+        String SMTP_TO_ADDRESS = "ruvan@ozemail.com.au";
+        final String subject = "Totem Log";
+        String fileAttachment = logFile.getAbsolutePath();
+
+        Properties props = new Properties();
+
+        props.put("mail.smtp.host", SMTP_HOST_NAME);
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.debug", "true");
+        props.put("mail.smtp.port", SMTP_PORT);
+
+        Session session = Session.getInstance(props, new javax.mail.Authenticator() {
+            protected javax.mail.PasswordAuthentication getPasswordAuthentication() {
+                return new javax.mail.PasswordAuthentication(SMTP_FROM_ADDRESS, "kkhgu6vcv");
+            }
+        });
+
+        try {
+            Message msg = new MimeMessage(session);
+            msg.setFrom(new InternetAddress(SMTP_FROM_ADDRESS));
+            //create the message part
+            MimeBodyPart messageBodyPart = new MimeBodyPart();
+            //fill message
+            messageBodyPart.setText("Attached is Totems log for the previous day");
+            Multipart multipart = new MimeMultipart();
+            multipart.addBodyPart(messageBodyPart);
+            // Part two is an attachment
+            messageBodyPart = new MimeBodyPart();
+            FileDataSource source = new FileDataSource(fileAttachment);
+            messageBodyPart.setDataHandler(new DataHandler(source));
+            messageBodyPart.setFileName(fileAttachment);
+            multipart.addBodyPart(messageBodyPart);
+            //put part in message
+            msg.setContent(multipart);
+            msg.setRecipient(Message.RecipientType.TO, InternetAddress.parse(SMTP_TO_ADDRESS)[0]);
+            msg.setSubject(subject);
+            //msg.setContent(content, "text/plain");
+
+            Transport.send(msg);
+            System.out.println("Email Sent");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
 
 }
