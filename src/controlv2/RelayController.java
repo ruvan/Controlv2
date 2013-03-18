@@ -725,15 +725,14 @@ public class RelayController extends Thread {
                    if(randomGenerator.nextBoolean()){ //lol! if it doesn't pick up anything here the system will hang
                        flowers[0][flowerNumber].petals[i].relay.toggleState();
                        states[0][flowerNumber][i] = 1;
-                       ctrl.log("Petal number: " + Integer.toString(i));
+                       ctrl.log("Toggled petal number: " + Integer.toString(i) + " at flower number: " + flowerNumber);
                        toggledPetal = true;
                    }
                }
                if(!toggledPetal) {
                    flowers[0][flowerNumber].petals[0].relay.toggleState();
                    states[0][flowerNumber][0] = 1;
-                   ctrl.log("Petal number: " + Integer.toString(0));
-                   toggledPetal=false;
+                   ctrl.log("Toggle petal number: " + Integer.toString(0) + " at flower number: " + flowerNumber);
                }
            }
            ks.map.put("states", states);
