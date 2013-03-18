@@ -32,6 +32,7 @@ public class RelayController extends Thread {
     static long queueExecutionTimeout = 10000;
     static long lastLogFileTime = 0;
     static long logFileTimeout = 60000;
+    static long timeTotemLastMoved = 0;
     static Random randomGenerator = new Random();
     static Date date = new Date();
     static Calendar calendar = Calendar.getInstance();
@@ -182,7 +183,7 @@ public class RelayController extends Thread {
             // maybe wait if a reaction has taken place
             // react to sensors should queue a new sequence to the front of the queue
 //            if (System.currentTimeMillis() > (lastReactionTime + reactionTimeout) && numReactions <= reactionsPerHour && (kineticSequenceQueue.isEmpty() || !kineticSequenceQueue.peek().isReaction)) {
-            if (System.currentTimeMillis() > (lastReactionTime + reactionTimeout) && (kineticSequenceQueue.isEmpty() || !kineticSequenceQueue.peek().isReaction)) {
+            if (System.currentTimeMillis() > (lastReactionTime + reactionTimeout) && System.currentTimeMillis() > (timeTotemLastMoved+10000) && (kineticSequenceQueue.isEmpty() || !kineticSequenceQueue.peek().isReaction)) {
                 reactToSensors();
             }
             
@@ -374,6 +375,7 @@ public class RelayController extends Thread {
             send(command);
             send(bank + 1); // +1 because ProXR starts at 1
             sleep(8);
+            timeTotemLastMoved = System.currentTimeMillis();
         }
     }
     
@@ -1034,11 +1036,16 @@ public class RelayController extends Thread {
 
     static public void turnOff(KineticSequence ks) {
         ctrl.log("running turn off");
+        
+        // turn on all PSU's
+        for (int bank = 1; bank < 19; bank++) {
+            relayTable[bank][0].setState(true);
+        }
+        // relay coil 12V supply
+        relayTable[0][2].setState(true);
+        
         //pull in all actuators
         for (int bank = 1; bank < 19; bank++) {
-//            for (int relay = 1; relay < 8; relay++) {
-//                relayTable[bank][relay].setState(false);
-//            }
             turnOffBank(bank);
         }
         updateRelays();
