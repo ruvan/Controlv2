@@ -25,7 +25,7 @@ public class MIDIController extends Thread {
         this.ctrl = ctrl;
         this.rctrl = rctrl;
         ctrl.log("Laser show initiating");
-        File midiFolder = new File("C:\\midiFiles");
+        File midiFolder = new File("C:\\MIDI files");
         File[] matchingFiles = midiFolder.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name) {
                 return name.startsWith("midi") && name.endsWith("txt");

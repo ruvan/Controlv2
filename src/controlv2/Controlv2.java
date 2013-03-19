@@ -336,9 +336,9 @@ public class Controlv2 {
     }
      
     static public void email(File logFile) {
-        String SMTP_HOST_NAME = "smtp.gmail.com";
+        String SMTP_HOST_NAME = "mail.drake-brockman.com.au";
         String SMTP_PORT = "587";
-        final String SMTP_FROM_ADDRESS = "gruvy.456@gmail.com";
+        final String SMTP_FROM_ADDRESS = "totem@drake-brockman.com.au";
         String SMTP_TO_ADDRESS = "ruvan@ozemail.com.au";
         final String subject = "Totem Log";
         String fileAttachment = logFile.getAbsolutePath();
@@ -352,7 +352,7 @@ public class Controlv2 {
 
         Session session = Session.getInstance(props, new javax.mail.Authenticator() {
             protected javax.mail.PasswordAuthentication getPasswordAuthentication() {
-                return new javax.mail.PasswordAuthentication(SMTP_FROM_ADDRESS, "kkhgu6vcv");
+                return new javax.mail.PasswordAuthentication(SMTP_FROM_ADDRESS, "108elements");
             }
         });
 
