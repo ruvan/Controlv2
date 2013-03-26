@@ -425,35 +425,41 @@ public class RelayController extends Thread {
     
     static public void openProjectionDoor() {
         // open projection door
+        ctrl.log("Opening projection door");
         relayTable[0][1].setState(true);
         updateRelays();
     }
     
     static public void closeProjectionDoor() {
         // close projection door
+        ctrl.log("Closing projection door");
         relayTable[0][1].setState(false);
         updateRelays();
     }
     
     static public void turnOnProjectionDoorPower() {
         // turn on projection door power supply
+        ctrl.log("Turning on projection door power");
         relayTable[0][3].setState(true);
         updateRelays();
     }
     
     static public void turnOffProjectionDoorPower() {
         // turn on projection door power supply
+        ctrl.log("Turning off projection door power");
         relayTable[0][3].setState(false);
         updateRelays();
     }
     
     static public void turnOnLasers() {
         // turn on projection door power supply
+        ctrl.log("Turning on lasers");
         relayTable[0][0].setState(true);
         updateRelays();
     }
     
     static public void turnOffLasers() {
+        ctrl.log("Turning off lasers");
         // turn on projection door power supply
         relayTable[0][0].setState(false);
         updateRelays();

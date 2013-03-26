@@ -20,10 +20,13 @@ public class MIDIController extends Thread {
     String javaPath = "C:\\Program Files\\Java\\jre7\\bin\\java.exe";
     Process p;
     Process off;
+    Boolean justShutdown;
     
-    public MIDIController(Controlv2 ctrl, RelayController rctrl) {
+    public MIDIController(Controlv2 ctrl, RelayController rctrl, Boolean justShutdown) {
         this.ctrl = ctrl;
         this.rctrl = rctrl;
+        this.justShutdown = justShutdown;
+        if (!justShutdown) {
         ctrl.log("Laser show initiating");
         File midiFolder = new File("C:\\MIDI files");
         File[] matchingFiles = midiFolder.listFiles(new FilenameFilter() {
@@ -34,15 +37,12 @@ public class MIDIController extends Thread {
         Random randomGenerator = new Random();
         MIDIFilePath = matchingFiles[randomGenerator.nextInt(matchingFiles.length)].getAbsolutePath();
         ctrl.log("Laser show chosen: " + MIDIFilePath);
+        }
     }
     
     public void run() {
-        rctrl.turnOnProjectionDoorPower();
-        sleep(1000);
-        rctrl.openProjectionDoor();
-        sleep(30000);
-        rctrl.turnOnLasers();
-        sleep(30000);
+        if (!justShutdown) {
+        startup();
         ProcessBuilder pb = new ProcessBuilder(javaPath, "-jar", "C:\\Control\\dist\\control.jar", MIDIFilePath);
         pb.directory(new File("C:\\"));
         ctrl.log("Playing laser show");
@@ -55,7 +55,22 @@ public class MIDIController extends Thread {
         } catch (InterruptedException fr) {   
         }
         ctrl.log("Laser show finished");
+        }
+        shutdown();
         
+    }
+    
+    public void startup() {
+        rctrl.turnOnProjectionDoorPower();
+        sleep(1000);
+        rctrl.openProjectionDoor();
+        sleep(30000);
+        rctrl.turnOnLasers();
+        sleep(30000);
+    }
+    
+    public void shutdown() {
+        ctrl.log("Shutting down laser show");
         // run turn off midi
         ctrl.log("Running MIDI Stop File");
         ProcessBuilder stopMidi = new ProcessBuilder(javaPath, "-jar", "C:\\Control\\dist\\control.jar", MIDIStopFilePath);
@@ -76,7 +91,6 @@ public class MIDIController extends Thread {
         rctrl.closeProjectionDoor();
         sleep(30000);
         rctrl.turnOffProjectionDoorPower();
-        
     }
     
     
