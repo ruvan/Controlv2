@@ -75,7 +75,7 @@ public class Controlv2 {
                     // turn off
                     activityLevel=0;
                     // TODO: should empty rctrl's job queue and add a power off job
-                } else if (calendar.get(Calendar.HOUR_OF_DAY) == 21 && calendar.get(Calendar.MINUTE) == 15 && !laserShowStarted) {
+                } else if (calendar.get(Calendar.HOUR_OF_DAY) == 20 && calendar.get(Calendar.MINUTE) >= 30 && !laserShowStarted) {
                     startLaserShow();
                 }
                 readCommandFile();

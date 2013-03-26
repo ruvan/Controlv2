@@ -756,7 +756,7 @@ public class RelayController extends Thread {
                                 } else if (petal.orientation == 7 || petal.orientation == 2) {
                                     orientationIndex = 1;
                                 } else {
-                                    orientationIndex = 2;
+                                    orientationIndex = 2; 
                                 }
                                 if (states[flower.level][flower.flowerNumber][orientationIndex] == 0) {
                                     states[flower.level][flower.flowerNumber][orientationIndex] = 1;
@@ -818,7 +818,7 @@ public class RelayController extends Thread {
 //           timings = (long[][][])ks.map.get("timings");
 //       }
         
-        ks.finished=true;
+//        ks.finished=true;
     }
     
     // bloom propagation will not toggle, it will bloom
