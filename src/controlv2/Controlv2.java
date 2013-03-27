@@ -121,6 +121,8 @@ public class Controlv2 {
         }
         
         rctrl.updateDanceTimes(danceTimes);
+        
+        laserShowStarted=false;
     }
     
     public static void log(String logContent) {
