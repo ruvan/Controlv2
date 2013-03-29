@@ -42,19 +42,19 @@ public class MIDIController extends Thread {
     
     public void run() {
         if (!justShutdown) {
-        startup();
-        ProcessBuilder pb = new ProcessBuilder(javaPath, "-jar", "C:\\Control\\dist\\control.jar", MIDIFilePath);
-        pb.directory(new File("C:\\"));
-        ctrl.log("Playing laser show");
-        try {
-            p = pb.start();
-        } catch (IOException ioex) {
-        }
-        try {
-            p.waitFor();
-        } catch (InterruptedException fr) {   
-        }
-        ctrl.log("Laser show finished");
+            startup();
+            ProcessBuilder pb = new ProcessBuilder(javaPath, "-jar", "C:\\Control\\dist\\control.jar", MIDIFilePath);
+            pb.directory(new File("C:\\"));
+            ctrl.log("Playing laser show");
+            try {
+                ctrl.laserProcess = pb.start();
+            } catch (IOException ioex) {
+            }
+            try {
+                ctrl.laserProcess.waitFor();
+            } catch (InterruptedException fr) {
+            }
+            ctrl.log("Laser show finished");
         }
         shutdown();
         

@@ -38,6 +38,8 @@ public class Controlv2 {
     static Calendar calendar;
     static SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
     static SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss ");
+    static Process laserProcess;
+    
     /**
      * Totem Behavioural Variables
      */
@@ -79,7 +81,7 @@ public class Controlv2 {
                     // turn off
                     activityLevel=0;
                     // TODO: should empty rctrl's job queue and add a power off job
-                } else if (calendar.get(Calendar.HOUR_OF_DAY) == 20 && calendar.get(Calendar.MINUTE) >= 30 && !laserShowStarted) {
+                } else if (calendar.get(Calendar.HOUR_OF_DAY) == 20 && calendar.get(Calendar.MINUTE) == 30 && !laserShowStarted && suitableForLasing()) {
                     startLaserShow(false);
                 }
                 readCommandFile();
@@ -260,7 +262,7 @@ public class Controlv2 {
     public static void startLaserShow(Boolean justShutdown) {
         mctrl = new MIDIController(ctrl, rctrl, justShutdown);
         mctrl.start();
-        laserShowStarted = true;
+        laserShowStarted = !justShutdown;
     }
     
     public int getActivityLevel() {
@@ -332,18 +334,25 @@ public class Controlv2 {
     }
     
     static public void respondToWeather() {
-        // Check wind speed, light and rain, turn off / on if necessary 
-        if(laserShowRunning) {
-            // Check night sensor
-        if(rctrl.sensors[0][6] < 254) {
-            log("Exception: Shutting down laser show due to ambient light levels");
-            startLaserShow(true);
-        } else if (rctrl.sensors[0][7] > 254) {
-            log("Exception: Shutting down laser show due to high wind levels");
-            startLaserShow(true);
+        // if laser show is running and it's not suitable for lasing then end the control-midi player process
+        if(laserShowRunning && !suitableForLasing()) {
+            laserProcess.destroy();
         }
-        }
+    }
+    
+    static public Boolean suitableForLasing() {
         
+        if(rctrl.sensors[0][7] < 254) { // Check night sensor 
+            log("Exception: Shutting down laser show due to ambient light levels");
+            return false;
+        } else if (rctrl.sensors[0][12] > 254) {// Check wind sensor 7
+            log("Exception: Shutting down laser show due to high wind levels");
+            return false;
+        } else if (rctrl.sensors[0][8] > 254) {// Check rain sensor
+            log("Exception: Shutting down laser show due to rain");
+            return false;
+        }
+        return true;
     }
     
     static public void sleep(int time) {
