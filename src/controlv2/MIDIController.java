@@ -61,6 +61,7 @@ public class MIDIController extends Thread {
     }
     
     public void startup() {
+        ctrl.laserShowRunning = true;
         rctrl.turnOnProjectionDoorPower();
         sleep(1000);
         rctrl.openProjectionDoor();
@@ -91,6 +92,7 @@ public class MIDIController extends Thread {
         rctrl.closeProjectionDoor();
         sleep(30000);
         rctrl.turnOffProjectionDoorPower();
+        ctrl.laserShowRunning = false;
     }
     
     

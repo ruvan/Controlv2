@@ -30,6 +30,7 @@ public class Controlv2 {
     static long commandFileModTime;
     static MIDIController mctrl;
     static Boolean laserShowStarted = false;
+    static Boolean laserShowRunning = false;
     static String logFilePath = "C:\\Totem logs\\";
     static File logFile;
     static FileWriter logFileWriter;
@@ -60,6 +61,9 @@ public class Controlv2 {
         int statusUpdateTimeout = 30;
         int logFileTimeout = 60;
         
+        // Act as if Totem is restarting after a failure so run sequence to turn off laser components
+        startLaserShow(true);
+        
         while(true) {
             
             // wait until the next second
@@ -76,7 +80,7 @@ public class Controlv2 {
                     activityLevel=0;
                     // TODO: should empty rctrl's job queue and add a power off job
                 } else if (calendar.get(Calendar.HOUR_OF_DAY) == 20 && calendar.get(Calendar.MINUTE) >= 30 && !laserShowStarted) {
-                    startLaserShow();
+                    startLaserShow(false);
                 }
                 readCommandFile();
                 
@@ -121,6 +125,9 @@ public class Controlv2 {
         }
         
         rctrl.updateDanceTimes(danceTimes);
+        
+        // Reset laserShowStarted
+        laserShowStarted = false;
     }
     
     public static void log(String logContent) {
@@ -249,8 +256,9 @@ public class Controlv2 {
         }
     }
     
-    public static void startLaserShow() {
-        mctrl = new MIDIController(ctrl, rctrl);
+    // Creates a midicontroller to either run a show or the shutdown sequence 
+    public static void startLaserShow(Boolean justShutdown) {
+        mctrl = new MIDIController(ctrl, rctrl, justShutdown);
         mctrl.start();
         laserShowStarted = true;
     }
@@ -325,6 +333,17 @@ public class Controlv2 {
     
     static public void respondToWeather() {
         // Check wind speed, light and rain, turn off / on if necessary 
+        if(laserShowRunning) {
+            // Check night sensor
+        if(rctrl.sensors[0][6] < 254) {
+            log("Exception: Shutting down laser show due to ambient light levels");
+            startLaserShow(true);
+        } else if (rctrl.sensors[0][7] > 254) {
+            log("Exception: Shutting down laser show due to high wind levels");
+            startLaserShow(true);
+        }
+        }
+        
     }
     
     static public void sleep(int time) {

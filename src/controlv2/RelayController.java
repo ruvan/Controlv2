@@ -391,6 +391,8 @@ public class RelayController extends Thread {
         sleep(800); // this is a rather long wait, will have to experiment to find a suitable time
         byte[] bytes = new byte[(sensors[1].length * 2) + 1];
         int numberBytesRead = readLine(bytes);
+        
+        // iterate though byte array, one sensor value is written across two bytes
         for(int i=1; i<bytes.length; i+=2) {
            
             StringBuilder sb = new StringBuilder();
