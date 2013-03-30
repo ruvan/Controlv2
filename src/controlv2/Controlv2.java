@@ -341,14 +341,14 @@ public class Controlv2 {
     }
     
     static public Boolean suitableForLasing() {
-        
-        if(rctrl.sensors[0][7] < 254) { // Check night sensor 
+        // Note the " && rctrl.sensors[1][7] == 0 " clause is to ensure we've had the same sensor reading at least once
+        if(rctrl.sensors[0][7] < 254 && rctrl.sensors[1][7] == 0) { // Check night sensor 
             log("Exception: Shutting down laser show due to ambient light levels");
             return false;
-        } else if (rctrl.sensors[0][12] > 254) {// Check wind sensor 7
+        } else if (rctrl.sensors[0][12] > 254 && rctrl.sensors[1][7] == 0) {// Check wind sensor 7
             log("Exception: Shutting down laser show due to high wind levels");
             return false;
-        } else if (rctrl.sensors[0][8] > 254) {// Check rain sensor
+        } else if (rctrl.sensors[0][8] > 254 && rctrl.sensors[1][7] == 0) {// Check rain sensor
             log("Exception: Shutting down laser show due to rain");
             return false;
         }

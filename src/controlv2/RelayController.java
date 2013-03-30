@@ -388,7 +388,7 @@ public class RelayController extends Thread {
         }
         send(254);
         send(204);
-        sleep(800); // this is a rather long wait, will have to experiment to find a suitable time
+        sleep(1000); // this is a rather long wait, will have to experiment to find a suitable time
         byte[] bytes = new byte[(sensors[1].length * 2) + 1];
         int numberBytesRead = readLine(bytes);
         
