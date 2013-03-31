@@ -337,6 +337,7 @@ public class Controlv2 {
         // if laser show is running and it's not suitable for lasing then end the control-midi player process
         if(laserShowRunning && !suitableForLasing()) {
             laserProcess.destroy();
+            laserShowRunning = false;
         }
     }
     
