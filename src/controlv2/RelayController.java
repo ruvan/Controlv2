@@ -38,6 +38,8 @@ public class RelayController extends Thread {
     static Calendar calendar = Calendar.getInstance();
     static int numberOfStills = 18;
     static int numReactions = 0;
+    static ArrayList<Integer> windSpeeds = new ArrayList<>();
+    
     
     // Triangle / Relay
     static Relay[][] relayTable = new Relay[19][8];
@@ -400,14 +402,31 @@ public class RelayController extends Thread {
             sb.append(String.format("%02X", bytes[i]));
             
             int hexToInt = Integer.parseInt(sb.toString(), 16);
+            int sensorNumber = (int)((i-1)*0.5);
             
-            ctrl.log("Sensor " + Integer.toString((int)((i-1)*0.5)) + " = " + Integer.toString(hexToInt));
+            ctrl.log("Sensor " + Integer.toString(sensorNumber) + " = " + Integer.toString(hexToInt));
             
-            if(Math.abs(sensors[0][(int)((i-1)*0.5)]-hexToInt) > 10) { // we consider the sensor state changed
+            if(Math.abs(sensors[0][(int)((i-1)*0.5)]-hexToInt) > 10 && sensorNumber!=12) { // we consider the sensor state changed
                 sensors[0][(int)((i-1)*0.5)] = hexToInt;
                 sensors[1][(int)((i-1)*0.5)] = 1;
+            } else if (sensorNumber==12) {
+                // trim list to size 30
+                while(windSpeeds.size()>=30) {
+                    windSpeeds.remove(0);
+                }
+                // add newest record
+                windSpeeds.add(new Integer(hexToInt));
+                // calculate average
+                int average=0;
+                for (int averageCounter = 0; averageCounter<windSpeeds.size(); averageCounter++) {
+                    average+=windSpeeds.get(averageCounter);
+                }
+                average = average/windSpeeds.size();
+                // set sensor value to average
+                sensors[0][12]=average;
+                
             } else {
-                sensors[1][(int)((i-1)*0.5)] = 0;
+                sensors[1][sensorNumber] = 0;
             }
                 
         }

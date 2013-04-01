@@ -346,10 +346,11 @@ public class Controlv2 {
         if(rctrl.sensors[0][7] < 254 && rctrl.sensors[1][7] == 0) { // Check night sensor 
             log("Exception: Shutting down laser show due to ambient light levels");
             return false;
-        } else if (rctrl.sensors[0][12] > 1640 && rctrl.sensors[1][7] == 0) {// Check wind sensor 7
-            log("Exception: Shutting down laser show due to high wind levels");
+        } else if (rctrl.sensors[0][12] > 1640) { // && rctrl.sensors[1][12] == 0) {// Check wind sensor 7
+            
+            log("Exception: Shutting down laser show due to high wind levels, wind level: " + Integer.toString(rctrl.sensors[0][12]));
             return false;
-        } else if (rctrl.sensors[0][8] > 254 && rctrl.sensors[1][7] == 0) {// Check rain sensor
+        } else if (rctrl.sensors[0][8] > 254 && rctrl.sensors[1][8] == 0) {// Check rain sensor
             log("Exception: Shutting down laser show due to rain");
             return false;
         }
