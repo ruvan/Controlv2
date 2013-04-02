@@ -44,7 +44,7 @@ public class RelayController extends Thread {
     // Triangle / Relay
     static Relay[][] relayTable = new Relay[19][8];
     static Flower[][] flowers = new Flower[3][12];
-    static int[][] sensors = new int[2][13]; //[2][13]
+    static int[][] sensors = new int[2][14]; //[2][13]
 
     public RelayController(Controlv2 ctrl, String port, int baud, String programName) {
         this.ctrl = ctrl;
@@ -381,6 +381,7 @@ public class RelayController extends Thread {
         }
     }
     
+    // Reads in sensor values and updates sensor table. 
     static public void updateSensors() {
         
         try {

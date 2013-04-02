@@ -86,7 +86,6 @@ public class MIDIController extends Thread {
         }
         ctrl.log("MIDI Stop File finished");
         
-        sleep(30000);
         rctrl.turnOffLasers();
         sleep(20000);
         rctrl.closeProjectionDoor();
