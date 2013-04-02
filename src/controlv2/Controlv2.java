@@ -61,7 +61,6 @@ public class Controlv2 {
         
         long currentTime = System.currentTimeMillis();
         int statusUpdateTimeout = 30;
-        int logFileTimeout = 60;
         
         // Act as if Totem is restarting after a failure so run sequence to turn off laser components
         startLaserShow(true);
@@ -70,6 +69,16 @@ public class Controlv2 {
             
             // wait until the next second
             if(System.currentTimeMillis()-currentTime > 1000) {
+                
+                // run every 60 seconds
+                if(System.currentTimeMillis()-currentTime > 60000) {
+                    log("Control is running");
+                    if(rctrl.sensors[0][13] > 1024) {
+                        log("Mains power active");
+                    }
+                    
+                }
+                
                 currentTime=System.currentTimeMillis();
                 calendar = Calendar.getInstance();
                 if(calendar.get(Calendar.HOUR_OF_DAY) >= startOfDay && activityLevel == 0) {
@@ -86,7 +95,7 @@ public class Controlv2 {
                 }
                 readCommandFile();
                 
-                respondToWeather();
+                respondToEnvironment();
                 
                 // Only update the status file every 30 seconds.
                 if(statusUpdateTimeout==0) {
@@ -96,13 +105,6 @@ public class Controlv2 {
                     statusUpdateTimeout--;
                 }
                 
-                // Only update the log file every 60 seconds.
-                if(logFileTimeout==0) {
-                    log("Control is running");
-                    logFileTimeout=60;
-                } else {
-                    logFileTimeout--;
-                }
                 
             }
         }
@@ -333,12 +335,35 @@ public class Controlv2 {
         }
     }
     
-    static public void respondToWeather() {
+    static public void respondToEnvironment() {
         // if laser show is running and it's not suitable for lasing then end the control-midi player process
         if(laserShowRunning && !suitableForLasing()) {
             laserProcess.destroy();
             laserShowRunning = false;
         }
+        
+        // Check that we still have power
+        if(rctrl.sensors[0][13] < 1024) {
+            //Shutdown the laser show
+            if(laserShowRunning) {
+                laserProcess.destroy();
+                laserShowRunning = false;
+            }
+            // Pull in all petals and shut down
+            rctrl.kineticSequenceQueue.clear();
+            rctrl.kineticSequenceQueue.add(new KineticSequence("turnOff", false, false));
+            rctrl.executeQueue();
+            
+            log("Exception: Lost power, shutting down");
+            
+            try{
+            Runtime runtime = Runtime.getRuntime();
+            Process proc = runtime.exec("shutdown -s -t 0");
+            } catch (IOException e) {}
+            System.exit(0);
+            
+        }
+        
     }
     
     static public Boolean suitableForLasing() {
