@@ -383,7 +383,7 @@ public class RelayController extends Thread {
     
     // Reads in sensor values and updates sensor table. 
     static public void updateSensors() {
-        
+        sleep(300);
         try {
             relayInputStream.skip(relayInputStream.available());
         } catch (IOException ex) {
@@ -391,9 +391,10 @@ public class RelayController extends Thread {
         }
         send(254);
         send(204);
-        sleep(1000); // this is a rather long wait, will have to experiment to find a suitable time
+        sleep(700); // this is a rather long wait, will have to experiment to find a suitable time
         byte[] bytes = new byte[(sensors[1].length * 2) + 1];
         int numberBytesRead = readLine(bytes);
+        
         
         // iterate though byte array, one sensor value is written across two bytes
         for(int i=1; i<bytes.length; i+=2) {
@@ -404,6 +405,9 @@ public class RelayController extends Thread {
             
             int hexToInt = Integer.parseInt(sb.toString(), 16);
             int sensorNumber = (int)((i-1)*0.5);
+            
+            // If it seems we have bogus data then do not update sensor values.
+            if(hexToInt>4096) {return;}
             
             ctrl.log("Sensor " + Integer.toString(sensorNumber) + " = " + Integer.toString(hexToInt));
             
