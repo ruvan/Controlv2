@@ -70,14 +70,14 @@ public class Controlv2 {
             // wait until the next second
             if(System.currentTimeMillis()-currentTime > 1000) {
                 
-                // run every 60 seconds
-                if(System.currentTimeMillis()-currentTime > 60000) {
-                    log("Control is running");
-                    if(rctrl.sensors[0][13] > 1024) {
-                        log("Mains power active");
-                    }
-                    
-                }
+//                // run every 60 seconds
+//                if(System.currentTimeMillis()-currentTime > 60000) {
+//                    log("Control is running");
+//                    if(rctrl.sensors[0][13] > 1024) {
+//                        log("Mains power active");
+//                    }
+//                    
+//                }
                 
                 currentTime=System.currentTimeMillis();
                 calendar = Calendar.getInstance();
@@ -138,10 +138,12 @@ public class Controlv2 {
         // If the log file doesn't exist or we're using the wrong days
         if (logFile == null || !logFile.getName().equals(dateFormat.format(calendar.getTime()) + ".txt")) {
             try {
+                System.out.println(logFile.getName() + dateFormat.format(calendar.getTime()));
                 // close an already open file
                 if(logFile!=null) {
                     logBufferedWriter.close();
                     
+                    System.out.println("Emailing log file");
                     // Send Geoffrey an email here
                     email(logFile);
                     
@@ -342,7 +344,7 @@ public class Controlv2 {
             laserShowRunning = false;
         }
         
-        // Check that we still have power
+        // Check that we still have power else run shutdown procedure
         if(rctrl.sensors[0][13] < 1024) {
             //Shutdown the laser show
             if(laserShowRunning) {
@@ -360,9 +362,33 @@ public class Controlv2 {
             Runtime runtime = Runtime.getRuntime();
             Process proc = runtime.exec("shutdown -s -t 0");
             } catch (IOException e) {}
-            System.exit(0);
-            
+            System.exit(0);  
         }
+        
+       
+        // Park Totem when experiencing wind levels over 7
+        if (rctrl.sensors[0][12] > 2293 && !rctrl.parked) { // If above wind level 7 
+            rctrl.parked = true;
+            // Pull in all petals and shut down
+            rctrl.kineticSequenceQueue.clear();
+            rctrl.kineticSequenceQueue.add(new KineticSequence("turnOff", false, false));
+            rctrl.executeQueue();
+            
+        // If wind levels are below 6.8     
+        } else if (rctrl.sensors[0][12] < 2210) {
+            // Set parked boolean to false if below 6.8 for more then 20 minutes
+            if (rctrl.parkedTime != null && System.currentTimeMillis() > rctrl.parkedTime + 1200000) {
+                rctrl.parkedTime = null;
+                rctrl.parked = false;
+            // Set time Totem was parked and wind levels were below 6.8
+            } else if (rctrl.parkedTime == null) {
+                rctrl.parkedTime = System.currentTimeMillis();
+            }
+        // If wind levels rise above 6.8 the parked timer will reset
+        } else if (rctrl.sensors[0][12] > 2211 && rctrl.parkedTime != null) {
+            rctrl.parkedTime = null;
+        }
+        
         
     }
     
@@ -371,12 +397,14 @@ public class Controlv2 {
         if(rctrl.sensors[0][7] < 254 && rctrl.sensors[1][7] == 0) { // Check night sensor 
             log("Exception: Shutting down laser show due to ambient light levels");
             return false;
-        } else if (rctrl.sensors[0][12] > 1640) { // && rctrl.sensors[1][12] == 0) {// Check wind sensor 7
-            
+        } else if (rctrl.sensors[0][12] > 1640) { // Check wind sensor 
             log("Exception: Shutting down laser show due to high wind levels, wind level: " + Integer.toString(rctrl.sensors[0][12]));
             return false;
         } else if (rctrl.sensors[0][8] > 254 && rctrl.sensors[1][8] == 0) {// Check rain sensor
             log("Exception: Shutting down laser show due to rain");
+            return false;
+        } else if(rctrl.parked){
+            log("Exception: Shutting down laser show due to Totem being in parked mode");
             return false;
         }
         return true;
