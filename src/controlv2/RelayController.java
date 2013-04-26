@@ -408,7 +408,7 @@ public class RelayController extends Thread {
             
             int sensorNumber = (int)((i-1)*0.5);
             
-            ctrl.log("Sensor " + Integer.toString(sensorNumber) + " = " + Integer.toString(hexToInt));
+            //ctrl.log("Sensor " + Integer.toString(sensorNumber) + " = " + Integer.toString(hexToInt));
             
             if(Math.abs(sensors[0][(int)((i-1)*0.5)]-hexToInt) > 10 && sensorNumber!=12) { // we consider the sensor state changed
                 sensors[0][(int)((i-1)*0.5)] = hexToInt;

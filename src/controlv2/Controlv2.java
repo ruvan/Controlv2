@@ -37,7 +37,7 @@ public class Controlv2 {
     static BufferedWriter logBufferedWriter;
     static Calendar calendar;
     static SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-    static SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss ");
+    static SimpleDateFormat timeFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss ");
     static Process laserProcess;
     
     /**
@@ -138,6 +138,7 @@ public class Controlv2 {
             try {
                 // close an already open file
                 if(logFile!=null) {
+                    System.out.println("Emailing log file due to variable logFile being not null");
                     logBufferedWriter.close();
                     
                     // Send Geoffrey an email here
