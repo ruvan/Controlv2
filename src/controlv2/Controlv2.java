@@ -138,7 +138,7 @@ public class Controlv2 {
         // If the log file doesn't exist or we're using the wrong days
         if (logFile == null || !logFile.getName().equals(dateFormat.format(calendar.getTime()) + ".txt")) {
             try {
-                System.out.println(logFile.getName() + dateFormat.format(calendar.getTime()));
+                //System.out.println(logFile.getName() + dateFormat.format(calendar.getTime()));
                 // close an already open file
                 if(logFile!=null) {
                     System.out.println("Emailing log file due to variable logFile being not null");
@@ -346,25 +346,27 @@ public class Controlv2 {
         }
         
         // Check that we still have power else run shutdown procedure
-        if(rctrl.sensors[0][13] < 1024) {
-            //Shutdown the laser show
-            if(laserShowRunning) {
-                laserProcess.destroy();
-                laserShowRunning = false;
-            }
-            // Pull in all petals and shut down
-            rctrl.kineticSequenceQueue.clear();
-            rctrl.kineticSequenceQueue.add(new KineticSequence("turnOff", false, false));
-            rctrl.executeQueue();
-            
-            log("Exception: Lost power, shutting down");
-            
-            try{
-            Runtime runtime = Runtime.getRuntime();
-            Process proc = runtime.exec("shutdown -s -t 0");
-            } catch (IOException e) {}
-            System.exit(0);  
-        }
+//        if(rctrl.sensors[0][13] < 1024) {
+//            System.out.println("sensor 13 = " + Integer.toString(rctrl.sensors[0][13]));
+//            System.out.println("sensor 14 = " + Integer.toString(rctrl.sensors[0][14]));
+//            //Shutdown the laser show
+//            if(laserShowRunning) {
+//                laserProcess.destroy();
+//                laserShowRunning = false;
+//            }
+//            // Pull in all petals and shut down
+//            rctrl.kineticSequenceQueue.clear();
+//            rctrl.kineticSequenceQueue.add(new KineticSequence("turnOff", false, false));
+//            rctrl.executeQueue();
+//            sleep(20000);
+//            log("Exception: Lost power, shutting down");
+//            
+//            try{
+//            Runtime runtime = Runtime.getRuntime();
+//            Process proc = runtime.exec("shutdown -s -t 0");
+//            } catch (IOException e) {}
+//            System.exit(0);  
+//        }
         
        
         // Park Totem when experiencing wind levels over 7
