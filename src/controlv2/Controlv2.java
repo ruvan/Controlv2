@@ -72,7 +72,7 @@ public class Controlv2 {
                 
 //                // run every 60 seconds
 //                if(System.currentTimeMillis()-currentTime > 60000) {
-//                    log("Control is running");
+//                    
 //                    if(rctrl.sensors[0][13] > 1024) {
 //                        log("Mains power active");
 //                    }
@@ -100,7 +100,8 @@ public class Controlv2 {
                 // Only update the status file every 30 seconds.
                 if(statusUpdateTimeout==0) {
                     updateStatus();
-                    statusUpdateTimeout=10;
+                    statusUpdateTimeout=30;
+                    log("Control is running");
                 } else {
                     statusUpdateTimeout--;
                 }
