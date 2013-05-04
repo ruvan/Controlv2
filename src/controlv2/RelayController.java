@@ -462,30 +462,26 @@ public class RelayController extends Thread {
         }
     }
     
+    // TODO: alter this method to put the power supplies back to their original state rather than turning them on.
     static public void relayContactManagement() {
-        // copy relay table state
-        Relay[][] relayTableClone = relayTable.clone();
-        
         // turn off PSU's
         for (int bank = 1; bank < 19; bank++) {
             relayTable[bank][0].setState(false);
         }
         updateRelays();
         
-        // Toggle relay state 6 times
-        for (int i = 0; i<6; i++) {
+        // Toggle relay state 12 times
+        for (int i = 0; i<12; i++) {
             for(int bank = 1; bank<19; bank++) {
-                turnOffBank(bank);
-            }
-            updateRelays();
-            for(int bank = 1; bank<19; bank++) {
-                turnOnBank(bank);
+                toggleBank(bank);
             }
             updateRelays();
         }
         
-        // put relays back to original position
-        relayTable=relayTableClone;
+        // turn on PSU's
+        for (int bank = 1; bank < 19; bank++) {
+            relayTable[bank][0].setState(true);
+        }
         updateRelays();
     }
 
@@ -498,6 +494,12 @@ public class RelayController extends Thread {
     static public void turnOffBank(int bank) {
         for (int relayNumber = 1; relayNumber < 8; relayNumber++) {
             relayTable[bank][relayNumber].setState(false);
+        }
+    }
+    
+    static public void toggleBank(int bank) {
+        for (int relayNumber = 1; relayNumber < 8; relayNumber++) {
+            relayTable[bank][relayNumber].toggleState();
         }
     }
 
@@ -670,12 +672,6 @@ public class RelayController extends Thread {
                 break;
         }
         return adjacent;
-    }
-
-    static public void toggleBank(int bank) {
-        for (int relayNumber = 1; relayNumber < 8; relayNumber++) {
-            relayTable[bank][relayNumber].toggleState();
-        }
     }
 
     static public Petal getBeakPetal(Flower flower, Petal petal) {
