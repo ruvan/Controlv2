@@ -26,8 +26,11 @@ public class Controlv2 {
     static RelayController rctrl;
     static String statusFileLoc;
     static String commandFileLoc;
+    static String tempShowsFileLoc;
+    static String showsFileLoc;
     Boolean debug = true;
     static long commandFileModTime;
+    static long showsFileModTime;
     static MIDIController mctrl;
     static Boolean laserShowStarted = false;
     static Boolean laserShowRunning = false;
@@ -39,6 +42,10 @@ public class Controlv2 {
     static SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
     static SimpleDateFormat timeFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss ");
     static Process laserProcess;
+    static int laserShowHour = 20;
+    static int laserShowMinute = 30;
+    static int laserShowHourDefault = 20;
+    static int laserShowMinuteDefault = 30;
     
     /**
      * Totem Behavioural Variables
@@ -56,7 +63,7 @@ public class Controlv2 {
         calendar = Calendar.getInstance();
         loadConfig(args[0]);
         commandFileModTime = new File(commandFileLoc).lastModified();
-        
+        showsFileModTime = new File(showsFileLoc).lastModified();
         Date date = new Date();
         
         long currentTime = System.currentTimeMillis();
@@ -90,7 +97,7 @@ public class Controlv2 {
                     // turn off
                     activityLevel=0;
                     // TODO: should empty rctrl's job queue and add a power off job
-                } else if (calendar.get(Calendar.HOUR_OF_DAY) == 20 && calendar.get(Calendar.MINUTE) == 30 && !laserShowStarted && suitableForLasing()) {
+                } else if (calendar.get(Calendar.HOUR_OF_DAY) == laserShowHour && calendar.get(Calendar.MINUTE) == laserShowMinute && !laserShowStarted && suitableForLasing()) {
                     startLaserShow(false);
                 }
                 readCommandFile();
@@ -195,6 +202,8 @@ public class Controlv2 {
             programName = prop.getProperty("ProgramName");
             statusFileLoc = prop.getProperty("statusFileLoc");
             commandFileLoc = prop.getProperty("commandFileLoc");
+            showsFileLoc = prop.getProperty("showsFileLoc");
+            tempShowsFileLoc = prop.getProperty("tempShowsFileLoc");
             
             // Load behavioural vars from status file;
             mood = prop.getProperty("initialMood");
@@ -209,6 +218,10 @@ public class Controlv2 {
 //            } else {
 //                MIDI = false;
 //            }
+            
+            // Get default laser time
+            laserShowHourDefault = Integer.parseInt(prop.getProperty("defaultLaserTime").split(":")[0]);
+            laserShowMinuteDefault = Integer.parseInt(prop.getProperty("defaultLaserTime").split(":")[1]);
 
             // Relay vars
             if (prop.getProperty("Relay").equals("true")) {
@@ -262,6 +275,66 @@ public class Controlv2 {
                 ex.printStackTrace();
             }
         }
+    }
+    
+    // Read shows.txt file, update todays laser show time and remove past entries
+    static void readShowsFile(Boolean force) {
+
+        // Get the last modified time
+        long modifiedTime = new File(showsFileLoc).lastModified();
+        
+        if (modifiedTime > showsFileModTime || force) { 
+            showsFileModTime = modifiedTime;
+ 
+            try {
+                // load the shows file
+                File shows = new File(showsFileLoc);
+                BufferedReader showsReader = new BufferedReader(new FileReader(shows));
+                String showLine;
+                
+                File tempFile = new File(tempShowsFileLoc);
+                BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+                
+                Calendar tempCalendar = Calendar.getInstance();
+                Boolean todaysShowDefined = false; // Tracks whether todays show was defined otherwise show will run at default times.
+                
+                while ((showLine = showsReader.readLine()) != null) {
+                    String[] split = showLine.split(",");
+                    String[] date = split[0].split("/");
+                    
+                    // if the current date and the date on the line are the same
+                    if(tempCalendar.get(Calendar.DATE) == Integer.parseInt(date[0]) && tempCalendar.get(Calendar.MONTH) == Integer.parseInt(date[1]) && tempCalendar.get(Calendar.YEAR) == Integer.parseInt(date[2])) {
+                        
+                        String[] laserTimes = split[3].split(":");
+                        int proposedHour = Integer.parseInt(laserTimes[0]);
+                        int proposedMinute = Integer.parseInt(laserTimes[1]);
+                        
+                        if((proposedHour >= 20 && proposedMinute > 29) && (proposedHour <= 23 && proposedMinute < 31)) {
+                            laserShowHour = proposedHour;
+                            laserShowMinute = proposedMinute;
+                            todaysShowDefined=true;
+                        }
+                        
+                    // Remove lines from the past
+                    } else if(tempCalendar.get(Calendar.DATE) > Integer.parseInt(date[0]) && tempCalendar.get(Calendar.MONTH) >= Integer.parseInt(date[1]) && tempCalendar.get(Calendar.YEAR) >= Integer.parseInt(date[2])) {
+                        continue;
+                    }
+                    writer.write(showLine);   
+                }
+                
+                writer.close();
+                tempFile.renameTo(shows);
+                
+                // Set show to default times
+                if(!todaysShowDefined) {
+                    laserShowHour = laserShowHourDefault;
+                    laserShowMinute = laserShowMinuteDefault;
+                }
+                
+            }catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        } 
     }
     
     // Creates a midicontroller to either run a show or the shutdown sequence 
