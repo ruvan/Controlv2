@@ -46,4 +46,12 @@ public class Relay {
         return lastTriggeredTime;
     }
     
+    public int getStrokes() {
+        return strokes;
+    }
+    
+    public void resetStrokes() {
+        strokes=0;
+    }
+    
 }
