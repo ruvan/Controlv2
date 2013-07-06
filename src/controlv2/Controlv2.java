@@ -46,6 +46,10 @@ public class Controlv2 {
     static int laserShowMinute = 30;
     static int laserShowHourDefault = 20;
     static int laserShowMinuteDefault = 30;
+    static Boolean firstRain = false;
+    static Boolean windy = false;
+    static Boolean dawn = false;
+    static Boolean dusk = false;
     
     /**
      * Totem Behavioural Variables
@@ -138,6 +142,12 @@ public class Controlv2 {
         
         rctrl.updateDanceTimes(danceTimes);
         
+        // Reset Environment trackers
+        firstRain = false;
+        dawn = false;
+        dusk = false; 
+        windy = false;
+        
         // Reset laserShowStarted
         laserShowStarted = false;
     }
@@ -154,7 +164,8 @@ public class Controlv2 {
                     
                     System.out.println("Emailing log file");
                     // Send Geoffrey an email here
-                    email(logFile);
+                    email(logFile, "ruvan@ozemail.com.au");
+                    email(logFile, "geoffdb@pixent.com.au");
                     
                 }
                 // Change logFile to one with todays date as the file name
@@ -278,8 +289,11 @@ public class Controlv2 {
     }
     
     // Read shows.txt file, update todays laser show time and remove past entries
+//    Shows File entries are expected to be on seperate lines with one line format looking like
+//    DD/MM/YYY,HH:MM,HH:MM,HH:MM
+//    date, audience arrives, audience exits, laser show start time
     static void readShowsFile(Boolean force) {
-
+        
         // Get the last modified time
         long modifiedTime = new File(showsFileLoc).lastModified();
         
@@ -302,18 +316,23 @@ public class Controlv2 {
                     String[] split = showLine.split(",");
                     String[] date = split[0].split("/");
                     
-                    // if the current date and the date on the line are the same
+                    // if current line is today
                     if(tempCalendar.get(Calendar.DATE) == Integer.parseInt(date[0]) && tempCalendar.get(Calendar.MONTH) == Integer.parseInt(date[1]) && tempCalendar.get(Calendar.YEAR) == Integer.parseInt(date[2])) {
                         
                         String[] laserTimes = split[3].split(":");
                         int proposedHour = Integer.parseInt(laserTimes[0]);
                         int proposedMinute = Integer.parseInt(laserTimes[1]);
                         
+                         // TODO: Make provisions for the laserShow time to actually make the lasers not turn on or or there to be no lasers for shows -- functionality not to be implemented after talking to Geoffrey
                         if((proposedHour >= 20 && proposedMinute > 29) && (proposedHour <= 23 && proposedMinute < 31)) {
                             laserShowHour = proposedHour;
                             laserShowMinute = proposedMinute;
                             todaysShowDefined=true;
                         }
+                        
+//                        TODO: read the show start and end times as well as the activity level and act on it
+//                        String[] showStartTimes = split[1].split(":");
+//                        int 
                         
                     // Remove lines from the past
                     } else if(tempCalendar.get(Calendar.DATE) > Integer.parseInt(date[0]) && tempCalendar.get(Calendar.MONTH) >= Integer.parseInt(date[1]) && tempCalendar.get(Calendar.YEAR) >= Integer.parseInt(date[2])) {
@@ -359,6 +378,7 @@ public class Controlv2 {
             // Update misc. fields
             status.setProperty("activityLevel", Integer.toString(activityLevel));
             status.setProperty("mood", mood);
+            status.setProperty("laserShowTime", Integer.toString(laserShowHour) + ":" + Integer.toString(laserShowMinute));
             if(rctrl.kineticSequenceQueue.peek() == null) {
                 status.setProperty("kineticSequence", "none");
             } else {
@@ -368,7 +388,6 @@ public class Controlv2 {
             
             
             // Update relay status
-//            System.out.println("updating relay status now");
             for (int bank = 0; bank < 19; bank++) {
                 String command = "";
                 for (int relay = 0; relay < 8; relay++) {
@@ -379,17 +398,11 @@ public class Controlv2 {
                     }
                 }
                 // set the status of the bank in the status file
-//                System.out.println(status.getProperty("b," + Integer.toString(bank + 1)));
-//                System.out.println("updating relay b," + Integer.toString(bank + 1) + " to " + command);
                 status.setProperty("b," + Integer.toString(bank + 1), command);
             }
             
             // Update sensor status
-//            System.out.println("updating sensor status now");
-//            System.out.println("sensor array size: " + Integer.toString(rctrl.sensors[1].length));
             for (int i=0; i<rctrl.sensors[1].length; i++) {
-                
-//                System.out.println("sensor " + Integer.toString(i) + " is " + Integer.toString(rctrl.sensors[0][i]));
                 if(i<6) {
                     status.setProperty("s,m," + Integer.toString(i + 1), Integer.toString(rctrl.sensors[0][i]));
                 } else if(i<8) {
@@ -442,7 +455,7 @@ public class Controlv2 {
 //            System.exit(0);  
 //        }
         
-       
+       /// Wind code
         // Park Totem when experiencing wind levels over 7
         if (rctrl.sensors[0][12] > 2293 && !rctrl.parked) { // If above wind level 7 
             rctrl.parked = true;
@@ -450,6 +463,7 @@ public class Controlv2 {
             rctrl.kineticSequenceQueue.clear();
             rctrl.kineticSequenceQueue.add(new KineticSequence("turnOff", false, false));
             rctrl.executeQueue();
+            // TODO: Does this actually stop Totem? What about when there's a new dance or reaction?
             
         // If wind levels are below 6.8     
         } else if (rctrl.sensors[0][12] < 2210) {
@@ -465,6 +479,18 @@ public class Controlv2 {
         } else if (rctrl.sensors[0][12] > 2211 && rctrl.parkedTime != null) {
             rctrl.parkedTime = null;
         }
+        
+        // Light Code
+        if(!dawn && rctrl.sensors[0][7] < 254 && rctrl.sensors[1][7] == 0) {
+            // run helloSun
+        }
+        if(!dusk && dawn && rctrl.sensors[0][7] > 254 && rctrl.sensors[1][7] == 0) {
+            // run goodbyeSun
+        }
+        if (!firstRain && rctrl.sensors[0][8] > 254 && rctrl.sensors[1][8] == 0) {
+            // run rainDance
+        }
+        
         
         
     }
@@ -495,11 +521,11 @@ public class Controlv2 {
             }
     }
      
-    static public void email(File logFile) {
+    static public void email(File logFile, String address) {
         String SMTP_HOST_NAME = "mail.drake-brockman.com.au";
         String SMTP_PORT = "587";
         final String SMTP_FROM_ADDRESS = "totem@drake-brockman.com.au";
-        String SMTP_TO_ADDRESS = "ruvan@ozemail.com.au";
+        String SMTP_TO_ADDRESS = address;
         final String subject = "Totem Log";
         String fileAttachment = logFile.getAbsolutePath();
 
