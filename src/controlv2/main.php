@@ -70,8 +70,7 @@ if (!isset($_SESSION['authenticated']) || $_SESSION['authenticated'] != true) {
             departureCell.innerHTML="<input type='text' name='departure"+numLines+"' maxlength='5' size='15'>";
             laserCell.innerHTML="<input type='text' name='laser"+numLines+"' maxlength='5' size='15'>";
             nameCell.innerHTML="<input type='text' name='name"+numLines+"' maxlength='15' size='15'>";
-            removeCell.innerHTML="<button type='button' name='remove"+numLines+"' onclick='removeRow("+numLines+")'>Remove</button>"
-
+            removeCell.innerHTML="<input type='image' src='resources/remove.png' name='remove"+numLines+"' onclick='removeRow("+numLines+")' width='30' height='30'>";
             // Set new numLines value
             form.elements["numLines"].value=numLines;
         }
@@ -91,13 +90,49 @@ if (!isset($_SESSION['authenticated']) || $_SESSION['authenticated'] != true) {
                 document.getElementsByName("arrival"+rowNumber)[0].setAttribute('name', 'arrival'+oldNumber);
                 document.getElementsByName("departure"+rowNumber)[0].setAttribute('name', 'departure'+oldNumber);
                 document.getElementsByName("laser"+rowNumber)[0].setAttribute('name', 'laser'+oldNumber);
-                document.getElementsByName("name"+rowNumber)[0].setAttribute('name', 'name'+oldNumber);
-                
-                
+                document.getElementsByName("name"+rowNumber)[0].setAttribute('name', 'name'+oldNumber);   
             }
             
             // Set new numLines value
             form.elements["numLines"].value=numLines-1;
+            if(numLines==1){
+                addShow();
+            }
+        }
+        
+        function validateForm() {
+            numLines=parseInt(document.forms["Schedule-Form"]["numLines"].value);
+            for (var i=0; i<numLines; i++) {
+                if (checkdate(document.forms["Schedule-Form"]["date"+i].value) == false) {
+                    alert("Detected incorrectly formatted date");
+                    return false;
+                }
+            }
+//            var date=document.forms["Schedule-Form"]["fname"].value;
+//            if (x==null || x=="")
+//              {
+//              alert("First name must be filled out");
+//              return false;
+//              }
+        }
+        
+        function checkdate(input){
+            var validformat=/^\d{2}\/\d{2}\/\d{4}$/ //Basic check for format validity
+            var returnval=false
+            if (!validformat.test(input.value))
+            alert("Invalid Date Format. Please correct and submit again.")
+            else{ //Detailed check for valid date ranges
+            var monthfield=input.value.split("/")[0]
+            var dayfield=input.value.split("/")[1]
+            var yearfield=input.value.split("/")[2]
+            var dayobj = new Date(yearfield, monthfield-1, dayfield)
+            if ((dayobj.getMonth()+1!=monthfield)||(dayobj.getDate()!=dayfield)||(dayobj.getFullYear()!=yearfield))
+            alert("Invalid Day, Month, or Year range detected. Please correct and submit again.")
+            else
+            returnval=true
+            }
+            if (returnval==false) input.select()
+            return returnval
         }
     </SCRIPT>
 
@@ -139,7 +174,7 @@ if (isset($_POST['Sequence-Form'])) {
 }
 
 // Respond to posted schedule
-if (isset($_POST['Schedule-Form-Save'])) {
+if (isset($_POST['numLines'])) {
     write_schedule($_POST);
 }
 
@@ -152,7 +187,7 @@ echo "<div id='main' name='main' class='center'>";
 
 // Build activity scheduling table
     $schedule = fopen("shows.txt", "r") or exit("Unable to open show scheduling file!");
-    echo "<div id='schedule'><form action='main.php' method='post' id='Schedule-Form'>\n <table id='Schedule-Table' border='1'> \n ";
+    echo "<div id='schedule'><form action='main.php' method='post' id='Schedule-Form' name='Schedule-Form'>\n <table id='Schedule-Table' border='1'> \n ";
     echo "<tr><td><b>Show Date</b><pre>(dd/mm/yyyy)</pre></td><td><b>Arrival Time</b><pre>(HH:MM)</pre></td><td><b>Departure Time</b><pre>(HH:MM)</pre></td><td><b>Laser Show Time</b><pre>(HH:MM)</pre></td><td><b>Show Name</b><pre>alphanumeric</pre></td></tr>\n";
     $numLines = 0; // Will hold the number of schedule lines which were returned     
     while (!feof($schedule)) {
@@ -160,11 +195,10 @@ echo "<div id='main' name='main' class='center'>";
         if(!empty($line)){
             $numLines++;
             list($date, $arrival, $departure, $laser, $name) = explode(",", $line);
-            echo "<tr><td><input type='text' value='$date' maxlength='10' size='15' name='date$numLines'></td><td><input type='text' value='$arrival' maxlength='5' size='15' name='arrival$numLines'></td><td><input type='text' value='$departure' maxlength='5' size='15' name='departure$numLines'></td><td><input type='text' value='$laser' maxlength='5' size='15' name='laser$numLines'></td><td><input type='text' value='$name' maxlength='15' size='15' name='name$numLines'></td><td><button type='button' name='remove$numLines' onclick='removeRow($numLines)'>Remove</button></td></tr> \n ";
-
+            echo "<tr><td><input type='text' value='$date' maxlength='10' size='15' name='date$numLines'></td><td><input type='text' value='$arrival' maxlength='5' size='15' name='arrival$numLines'></td><td><input type='text' value='$departure' maxlength='5' size='15' name='departure$numLines'></td><td><input type='text' value='$laser' maxlength='5' size='15' name='laser$numLines'></td><td><input type='text' value='$name' maxlength='15' size='15' name='name$numLines'></td><td><input type='image' src='resources/remove.png' name='remove$numLines' title='Remove Show' onclick='removeRow($numLines)' width='30' height='30'></td></tr> \n ";
         }
     }
-    echo "<tr><td><input type='hidden' value='$numLines' name='numLines' id='numLines'></td><td><button type='button' onclick='addShow()'>Add Show</button></td><td></td><td></td><td><input type='submit' value='Save' name='Schedule-Form-Save'></td></tr>\n";
+    echo "<tr><td><input type='hidden' value='$numLines' name='numLines' id='numLines'></td><td></td><td></td><td></td><td></td><td><input type='image' name='add' src='resources/add.png' title='Add Show' onclick='addShow();return false;' width='30' height='30'/><input type='image' value='Save' name='Schedule-Form-Save' title='Save' onclick='return validateForm()' src='resources/save.png' width='30' height='30'/></td></tr>\n";
     echo "</table></form></div>\n";
     fclose($schedule);
 
