@@ -72,8 +72,7 @@ public class MIDIController extends Thread {
     
     public void shutdown() {
         ctrl.log("Shutting down laser show");
-        // run turn off midi
-        ctrl.log("Running MIDI Stop File");
+        ctrl.log("Running MIDI Stop File"); // run turn off midi
         ProcessBuilder stopMidi = new ProcessBuilder(javaPath, "-jar", "C:\\Control\\dist\\control.jar", MIDIStopFilePath);
         stopMidi.directory(new File("C:\\"));
         try {
