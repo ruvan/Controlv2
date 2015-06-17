@@ -324,6 +324,7 @@ public class Controlv2 {
                         int proposedMinute = Integer.parseInt(laserTimes[1]);
                         
                          // TODO: Make provisions for the laserShow time to actually make the lasers not turn on or or there to be no lasers for shows -- functionality not to be implemented after talking to Geoffrey
+                        // TODO: The time restrictions below should be in the interface not code.
                         if((proposedHour >= 20 && proposedMinute > 29) && (proposedHour <= 23 && proposedMinute < 31)) {
                             laserShowHour = proposedHour;
                             laserShowMinute = proposedMinute;
@@ -497,10 +498,11 @@ public class Controlv2 {
     
     static public Boolean suitableForLasing() {
         // Note the " && rctrl.sensors[1][7] == 0 " clause is to ensure we've had the same sensor reading at least once
-        if(rctrl.sensors[0][7] < 254 && rctrl.sensors[1][7] == 0) { // Check night sensor 
-            log("Exception: Shutting down laser show due to ambient light levels");
-            return false;
-        } else if (rctrl.sensors[0][12] > 1640) { // Check wind sensor 
+//        if(rctrl.sensors[0][7] < 254 && rctrl.sensors[1][7] == 0) { // Check night sensor 
+//            log("Exception: Shutting down laser show due to ambient light levels");
+//            return false;
+//        } else 
+            if (rctrl.sensors[0][12] > 1640) { // Check wind sensor 
             log("Exception: Shutting down laser show due to high wind levels, wind level: " + Integer.toString(rctrl.sensors[0][12]));
             return false;
         } else if (rctrl.sensors[0][8] > 254 && rctrl.sensors[1][8] == 0) {// Check rain sensor
