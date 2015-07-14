@@ -42,10 +42,10 @@ public class Controlv2 {
     static SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
     static SimpleDateFormat timeFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss ");
     static Process laserProcess;
-    static int laserShowHour = 20;
-    static int laserShowMinute = 30;
-    static int laserShowHourDefault = 20;
-    static int laserShowMinuteDefault = 30;
+    static int laserShowHour;
+    static int laserShowMinute;
+    static int laserShowHourDefault;
+    static int laserShowMinuteDefault;
     static Boolean firstRain = false;
     static Boolean windy = false;
     static Boolean dawn = false;
@@ -233,6 +233,9 @@ public class Controlv2 {
             // Get default laser time
             laserShowHourDefault = Integer.parseInt(prop.getProperty("defaultLaserTime").split(":")[0]);
             laserShowMinuteDefault = Integer.parseInt(prop.getProperty("defaultLaserTime").split(":")[1]);
+            laserShowHour = laserShowHourDefault;
+            laserShowMinute = laserShowMinuteDefault;
+            log("Laser show is set to start at " + Integer.toString(laserShowHour) + ":" + Integer.toString(laserShowMinute));
 
             // Relay vars
             if (prop.getProperty("Relay").equals("true")) {
@@ -372,6 +375,7 @@ public class Controlv2 {
         Properties status = new Properties();
 
         try {
+            
             // load the status file
             FileInputStream statusFI = new FileInputStream(statusFileLoc);
             status.load(statusFI);
