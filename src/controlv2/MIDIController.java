@@ -48,7 +48,9 @@ public class MIDIController extends Thread {
             ctrl.log("Playing laser show");
             try {
                 ctrl.laserProcess = pb.start();
+                ctrl.log("Laser show process started");
             } catch (IOException ioex) {
+                ctrl.log("Laser show process failed to start");
             }
             try {
                 ctrl.laserProcess.waitFor();
