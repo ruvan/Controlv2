@@ -43,7 +43,7 @@ public class MIDIController extends Thread {
     public void run() {
         if (!justShutdown) {
             startup();
-            ProcessBuilder pb = new ProcessBuilder(javaPath, "-jar", "C:\\Control\\dist\\control.jar", MIDIFilePath);
+            ProcessBuilder pb = new ProcessBuilder(javaPath, "-jar", "C:\\Control\\dist\\Control.jar", MIDIFilePath);
             pb.directory(new File("C:\\"));
             ctrl.log("Playing laser show");
             try {
@@ -54,7 +54,9 @@ public class MIDIController extends Thread {
             }
             try {
                 ctrl.laserProcess.waitFor();
+                ctrl.log("Successfully waited for Laser show process to finish.");
             } catch (InterruptedException fr) {
+                ctrl.log("Failed to wait for Laser show process to finish.");
             }
             ctrl.log("Laser show finished");
         }
