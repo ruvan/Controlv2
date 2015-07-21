@@ -1,9 +1,8 @@
-
 package controlv2;
 
 /**
  *
- * @author Tyrone
+ * @author Ruvan Muthu-Krishna
  */
 
 public class Relay {
@@ -40,6 +39,7 @@ public class Relay {
         }else{
             setState(true);
         }
+        strokes++;
     }
     
     public long getLastTriggeredTime() {

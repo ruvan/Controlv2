@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package controlv2;
 
 import java.util.*;
@@ -14,6 +10,9 @@ import javax.activation.*;
 /**
  *
  * @author Ruvan Muthu-Krishna
+ * @version 2.0
+ * 
+ * Control code written for Geoffrey Drake-Brockman for his art works Totem and Translight
  */
 public class Controlv2 {
 
@@ -21,31 +20,55 @@ public class Controlv2 {
      * Class Variables
      */
     static String programName;
-    static Controlv2 ctrl;
     static Boolean relay = false;
-    static RelayController rctrl;
+    Boolean debug = true;
+    
+    /**
+     * External File Variables
+     */
     static String statusFileLoc;
     static String commandFileLoc;
     static String tempShowsFileLoc;
     static String showsFileLoc;
-    Boolean debug = true;
     static long commandFileModTime;
     static long showsFileModTime;
+    
+    /**
+     * Calendar Variables
+     */
+    static Calendar calendar;
+    static SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+    static SimpleDateFormat timeFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss ");
+    
+    /** 
+     * Object Variables
+     */
+    static Controlv2 ctrl;
     static MIDIController mctrl;
-    static Boolean laserShowStarted = false;
-    static Boolean laserShowRunning = false;
+    static RelayController rctrl;
+    
+    /**
+     * Event Log Variables
+     */
     static String logFilePath = "C:\\Totem logs\\";
     static File logFile;
     static FileWriter logFileWriter;
     static BufferedWriter logBufferedWriter;
-    static Calendar calendar;
-    static SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-    static SimpleDateFormat timeFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss ");
+    
+    /**
+     * Laser Show Variables
+     */
     static Process laserProcess;
     static int laserShowHour;
     static int laserShowMinute;
     static int laserShowHourDefault;
     static int laserShowMinuteDefault;
+    static Boolean laserShowStarted = false;
+    static Boolean laserShowRunning = false;
+    
+    /**
+     * Environment Variables
+     */
     static Boolean firstRain = false;
     static Boolean windy = false;
     static Boolean dawn = false;
@@ -61,86 +84,81 @@ public class Controlv2 {
     
     /**
      * @param args the command line arguments
+     * args[0]: Config file location
      */
     public static void main(String[] args) {
         ctrl = new Controlv2();
         calendar = Calendar.getInstance();
-        loadConfig(args[0]);
+        loadConfig(args[0]); //Parse the config file
+        
+        /** 
+         * Take note of last modified times on files to be watched
+         */
         commandFileModTime = new File(commandFileLoc).lastModified();
         showsFileModTime = new File(showsFileLoc).lastModified();
-        Date date = new Date();
         
+        Date date = new Date();
         long currentTime = System.currentTimeMillis();
         int statusUpdateTimeout = 30;
         
-        // Act as if Totem is restarting after a failure so run sequence to turn off laser components
-        startLaserShow(true);
+        startLaserShow(true); // Act as if Totem is restarting after an incorrect shutdown so run sequence to turn off laser components
         
+        /**
+         * Totem's main loop
+         */
         while(true) {
             
-            // wait until the next second
-            if(System.currentTimeMillis()-currentTime > 1000) {
-                
-//                // run every 60 seconds
-//                if(System.currentTimeMillis()-currentTime > 60000) {
-//                    
-//                    if(rctrl.sensors[0][13] > 1024) {
-//                        log("Mains power active");
-//                    }
-//                    
-//                }
+            // repeat loop at most once per second
+            if(System.currentTimeMillis()-currentTime > 1000) {              
                 
                 currentTime=System.currentTimeMillis();
-                calendar = Calendar.getInstance();
-                if(calendar.get(Calendar.HOUR_OF_DAY) >= startOfDay && activityLevel == 0) {
-                    // turn on
+                calendar = Calendar.getInstance(); 
+                
+                if(calendar.get(Calendar.HOUR_OF_DAY) >= startOfDay && activityLevel == 0) { // If it's the start of the day then turn on
                     activityLevel=1;
                     startOfDay();
                     log("Calling startOfDay");
-                } else if (calendar.get(Calendar.HOUR_OF_DAY) == endOfDay && activityLevel == 1) {
+                } else if (calendar.get(Calendar.HOUR_OF_DAY) == endOfDay && activityLevel == 1) { // If it's the end of the day then turn off
                     // turn off
                     activityLevel=0;
                     // TODO: should empty rctrl's job queue and add a power off job
-                } else if (calendar.get(Calendar.HOUR_OF_DAY) == laserShowHour && calendar.get(Calendar.MINUTE) == laserShowMinute && !laserShowStarted && suitableForLasing()) {
+                } else if (calendar.get(Calendar.HOUR_OF_DAY) == laserShowHour && calendar.get(Calendar.MINUTE) == laserShowMinute && !laserShowStarted && suitableForLasing()) { // If it's time for the laser show and environmental conditions are suitable then start lasing
                     startLaserShow(false);
                 }
-                readCommandFile();
                 
-                respondToEnvironment();
+                readCommandFile(); // Read the command file for any commands given by the GUI
+                
+                respondToEnvironment(); // Respond to enviromental conditions
                 
                 // Only update the status file every 30 seconds.
                 if(statusUpdateTimeout==0) {
-                    updateStatus();
+                    updateStatus(); 
                     statusUpdateTimeout=30;
                     log("Control is running");
                 } else {
                     statusUpdateTimeout--;
                 }
                 
-                
             }
         }
     }
     
+    /**
+     * generate random dance times until the danceTimes array is full (150) -- note sequences need a start time
+     */
     private static void startOfDay() {
-        // generate 10 random dance times -- note sequences need a start time
-        // 
         Long[] danceTimes = new Long[25*6];
         Calendar tempCalendar = Calendar.getInstance();
         
-//        tempCalendar.add(Calendar.HOUR,1); 
-//        randomizeTime(tempCalendar, 28);
         int i = 0;
         while(tempCalendar.get(Calendar.HOUR_OF_DAY) != endOfDay && i < danceTimes.length) {
             danceTimes[i] = new Long(tempCalendar.getTimeInMillis());
-//            tempCalendar.add(Calendar.MINUTE,75);
-//            randomizeTime(tempCalendar, 34);
             tempCalendar.add(Calendar.MINUTE,20);
             randomizeTime(tempCalendar, 4);
             i++;
         }
         
-        rctrl.updateDanceTimes(danceTimes);
+        rctrl.updateDanceTimes(danceTimes); // Send the dance times to the relay controller object
         
         // Reset Environment trackers
         firstRain = false;
@@ -152,33 +170,34 @@ public class Controlv2 {
         laserShowStarted = false;
     }
     
+    /**
+     * Logging functionality. Can log logContent to file and will email logs at the end of each day.
+     * @param logContent 
+     */
     public static void log(String logContent) {
-        // If the log file doesn't exist or we're using the wrong days
+        // If the log file doesn't exist or it's a new day
         if (logFile == null || !logFile.getName().equals(dateFormat.format(calendar.getTime()) + ".txt")) {
             try {
-                //System.out.println(logFile.getName() + dateFormat.format(calendar.getTime()));
-                // close an already open file
+                // close and email as already open file
                 if(logFile!=null) {
-                    System.out.println("Emailing log file due to variable logFile being not null");
+                    System.out.println("Emailing log file");
                     logBufferedWriter.close();
                     
-                    System.out.println("Emailing log file");
-                    // Send Geoffrey an email here
+                    // Email Geoffrey and Ruvan the log file
                     email(logFile, "ruvan@ozemail.com.au");
-                    email(logFile, "geoffdb@pixent.com.au");
-                    
+                    email(logFile, "geoffdb@pixent.com.au");    
                 }
-                // Change logFile to one with todays date as the file name
+                
+                // Create a logFile to one with todays date as the file name
                 logFile = new File(logFilePath + dateFormat.format(calendar.getTime()) + ".txt");
                 if (!logFile.exists()) {
-                    // Create new log file
-
                     logFile.createNewFile();
-
                 }
+                
                 // Create FileWriter and BufferedWriter objects
                 logFileWriter = new FileWriter(logFile.getAbsoluteFile(), true);
                 logBufferedWriter = new BufferedWriter(logFileWriter);
+                
             } catch (IOException ex) {
             }
         }
@@ -202,6 +221,10 @@ public class Controlv2 {
         tempCalendar.add(Calendar.MINUTE, minutes);
     }
     
+    /**
+     * Parse the config file once on startup
+     * @param configPath 
+     */
     private static void loadConfig(String configPath) {
         Properties prop = new Properties();
 
@@ -237,7 +260,7 @@ public class Controlv2 {
             laserShowMinute = laserShowMinuteDefault;
             log("laser show is set to start at " + Integer.toString(laserShowHour) + ":" + Integer.toString(laserShowMinute));
 
-            // Relay vars
+            // Set relay vars and create relay controller object
             if (prop.getProperty("Relay").equals("true")) {
                 relay = true;
                 rctrl = new RelayController(ctrl, prop.getProperty("RelayComPort"), Integer.parseInt(prop.getProperty("RelayBaud")), programName);
@@ -252,15 +275,18 @@ public class Controlv2 {
         }
     }
     
+    /**
+     * Parse the command file written to by the GUI
+     */
     static void readCommandFile() {
 
         // Get the last modified time
         long modifiedTime = new File(commandFileLoc).lastModified();
         
-        if (modifiedTime > commandFileModTime) {
-            commandFileModTime = modifiedTime;
+        if (modifiedTime > commandFileModTime) { // if it's been modified
+            commandFileModTime = modifiedTime; // record new modification time
             try {
-                // load the status file
+                // parse the command file
                 FileInputStream commandFile = new FileInputStream(commandFileLoc);
                 DataInputStream in = new DataInputStream(commandFile);
                 BufferedReader commandReader = new BufferedReader(new InputStreamReader(in));
@@ -291,10 +317,14 @@ public class Controlv2 {
         }
     }
     
-    // Read shows.txt file, update todays laser show time and remove past entries
-//    Shows File entries are expected to be on seperate lines with one line format looking like
-//    DD/MM/YYY,HH:MM,HH:MM,HH:MM
-//    date, audience arrives, audience exits, laser show start time
+//// TODO: This method needs looking at / making functional 
+    /**
+     * Read shows.txt file, update todays laser show time and remove past entries
+     * Shows File entries are expected to be on seperate lines with one line format looking like
+     * DD/MM/YYY,HH:MM,HH:MM,HH:MM
+     * date, audience arrives, audience exits, laser show start time
+     * @param force 
+     */
     static void readShowsFile(Boolean force) {
         
         // Get the last modified time
@@ -360,7 +390,9 @@ public class Controlv2 {
         } 
     }
     
-    // Creates a midicontroller to either run a show or the shutdown sequence 
+    /**
+     * Creates a midicontroller to either run a show or the shutdown sequence 
+     */
     public static void startLaserShow(Boolean justShutdown) {
         mctrl = new MIDIController(ctrl, rctrl, justShutdown);
         mctrl.start();
@@ -371,6 +403,9 @@ public class Controlv2 {
         return activityLevel;
     }
 
+    /**
+     * Update Totem's status to file for display on the GUI
+     */
     static public void updateStatus() {
         Properties status = new Properties();
 
@@ -383,11 +418,12 @@ public class Controlv2 {
             status.setProperty("activityLevel", Integer.toString(activityLevel));
             status.setProperty("mood", mood);
             status.setProperty("laserShowTime", Integer.toString(laserShowHour) + ":" + Integer.toString(laserShowMinute));
+            // Get the next kinetic sequence in the queue
             if(rctrl.kineticSequenceQueue.peek() == null) {
                 status.setProperty("kineticSequence", "none");
             } else {
                 status.setProperty("kineticSequence", rctrl.kineticSequenceQueue.peek().sequenceName);
-                // Could get an iterator and iterate through the queue here to display queue elements in the UI
+                // TODO: Could get an iterator and iterate through the queue here to display queue elements in the UI
             }
             
             
@@ -429,8 +465,14 @@ public class Controlv2 {
         }
     }
     
+    /**
+     * Check environmental conditions and react appropriately
+     */
     static public void respondToEnvironment() {
-        // if laser show is running and it's not suitable for lasing then end the control-midi player process
+        /**
+         * Laser Checks
+         * if laser show is running and it's not suitable for lasing then end the control-midi player process
+         */
         if(laserShowRunning && !suitableForLasing()) {
             laserProcess.destroy();
             laserShowRunning = false;
@@ -459,7 +501,9 @@ public class Controlv2 {
 //            System.exit(0);  
 //        }
         
-       /// Wind code
+       /**
+        * Wind Checks
+        */
         // Park Totem when experiencing wind levels over 7
         if (rctrl.sensors[0][12] > 2293 && !rctrl.parked) { // If above wind level 7 
             rctrl.parked = true;
@@ -484,21 +528,25 @@ public class Controlv2 {
             rctrl.parkedTime = null;
         }
         
-        // Light Code
+        /**
+         * Light Checks
+         */
         if(!dawn && rctrl.sensors[0][7] < 254 && rctrl.sensors[1][7] == 0) {
-            // run helloSun
+            // TODO: add run helloSun
         }
         if(!dusk && dawn && rctrl.sensors[0][7] > 254 && rctrl.sensors[1][7] == 0) {
-            // run goodbyeSun
+            // TODO: add run goodbyeSun
         }
         if (!firstRain && rctrl.sensors[0][8] > 254 && rctrl.sensors[1][8] == 0) {
-            // run rainDance
+            // TODO: add run rainDance
         }
-        
-        
-        
+
     }
     
+    /**
+     * Checks if it's suitable for lasing
+     * @return 
+     */
     static public Boolean suitableForLasing() {
         // Note the " && rctrl.sensors[1][7] == 0 " clause is to ensure we've had the same sensor reading at least once
 //        if(rctrl.sensors[0][7] < 254 && rctrl.sensors[1][7] == 0) { // Check night sensor 
@@ -518,6 +566,10 @@ public class Controlv2 {
         return true;
     }
     
+    /** 
+     * Sleep the tread for time milliseconds
+     * @param time 
+     */
     static public void sleep(int time) {
         try {
                 Thread.sleep(time);
@@ -526,6 +578,11 @@ public class Controlv2 {
             }
     }
      
+    /**
+     * Create and send email
+     * @param logFile
+     * @param address 
+     */
     static public void email(File logFile, String address) {
         String SMTP_HOST_NAME = "mail.drake-brockman.com.au";
         String SMTP_PORT = "587";

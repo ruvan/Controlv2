@@ -1,14 +1,12 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package controlv2;
 
 import java.util.*;
 
 /**
  *
- * @author Tyrone
+ * @author Ruvan Muthu-Krishna
+ * 
+ * Return -1 if k1 goes behind k2
  */
 public class KineticSequenceComparator implements Comparator<KineticSequence> {
     @Override
@@ -22,4 +20,3 @@ public class KineticSequenceComparator implements Comparator<KineticSequence> {
         }
     }
 }
-// return -1 if k1 goes behind k2

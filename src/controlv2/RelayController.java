@@ -7,7 +7,7 @@ import java.math.*;
 
 /**
  *
- * @author Ruvan
+ * @author Ruvan Muthu-Krishna
  *
  * Notes: When adding I'm normally actually toggling, which is different and
  * both behaviours should be present
@@ -18,12 +18,25 @@ public class RelayController extends Thread {
      * Class Variables
      */
     static Controlv2 ctrl;
+    static Comparator<KineticSequence> queueComparator = new KineticSequenceComparator();
+    static PriorityQueue<KineticSequence> kineticSequenceQueue = new PriorityQueue<KineticSequence>(11, queueComparator);
+    static Random randomGenerator = new Random();
+    static int numberOfStills = 18;
+    static int numReactions = 0;
+    static ArrayList<Integer> windSpeeds = new ArrayList<>();
+    static Boolean parked=false;
+    
+    /**
+     * Relay Variables
+     */
     SerialPort relaySerialPort;
     static InputStream relayInputStream;
     static OutputStream relayOutputStream;
+     
+    /**
+     * Time Variables
+     */
     static int sleepTime = 10000;
-    static Comparator<KineticSequence> queueComparator = new KineticSequenceComparator();
-    static PriorityQueue<KineticSequence> kineticSequenceQueue = new PriorityQueue<KineticSequence>(11, queueComparator);
     static Queue<Long> danceTimes = new LinkedList<>();
     static long lastReactionTime = 0;
     static int reactionTimeout = 30000; // 1 minute
@@ -33,19 +46,18 @@ public class RelayController extends Thread {
     static long timeTotemLastMoved = 0;
     static long sixtySecondTimer = System.currentTimeMillis();
     static long tenMinuteTimer = System.currentTimeMillis();
-    static Random randomGenerator = new Random();
     static Date date = new Date();
     static Calendar calendar = Calendar.getInstance();
-    static int numberOfStills = 18;
-    static int numReactions = 0;
-    static ArrayList<Integer> windSpeeds = new ArrayList<>();
-    static Boolean parked=false;
     static Long parkedTime;
-    // Triangle / Relay
+   
+    /**
+     * Hardware Variables
+     */
     static Relay[][] relayTable = new Relay[19][8];
     static Flower[][] flowers = new Flower[3][12];
-    static int[][] sensors = new int[2][15]; //[2][13]
+    static int[][] sensors = new int[2][15];
 
+    
     public RelayController(Controlv2 ctrl, String port, int baud, String programName) {
         this.ctrl = ctrl;
         try {
@@ -64,165 +76,170 @@ public class RelayController extends Thread {
         }
     }
 
+    /**
+     * Main loop for relay controller class
+     */
     public void run() {
-
-
         while (true) {
             calendar = Calendar.getInstance();
 
             if(!parked) {
-            if (danceTimes.peek() != null && System.currentTimeMillis() > danceTimes.peek().longValue()) {
-                danceTimes.remove(); // remove element from queue
-                ctrl.log("Starting new Dance");
-                // fill kinetic sequence queue
-                for (int i = 0; i < 10; i++) {
-                    switch (randomGenerator.nextInt(numberOfStills - 1)) {
-                        case 0:
-                            kineticSequenceQueue.add(new KineticSequence("runRightDiagonals", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
-                            break;
-                        case 1:
-                            kineticSequenceQueue.add(new KineticSequence("runLeftDiagonals", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
-                            break;
-                        case 2:
-                            kineticSequenceQueue.add(new KineticSequence("runHorizontals", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
-                            break;
-                        case 3:
-                            kineticSequenceQueue.add(new KineticSequence("runBothDiagonals", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
-                            break;
-                        case 4:
-                            kineticSequenceQueue.add(new KineticSequence("runLeftDandH", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
-                            break;
-                        case 5:
-                            kineticSequenceQueue.add(new KineticSequence("runRightDandH", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
-                            break;
-                        case 6:
-                            kineticSequenceQueue.add(new KineticSequence("runBlank", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
-                            break;
-                        case 7:
-                            kineticSequenceQueue.add(new KineticSequence("runHugeTriangle", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
-                            break;
-                        case 8:
-                            KineticSequence ks8 = new KineticSequence("runChaos", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean());
-                            ks8.map = new HashMap<>();
-                            ks8.map.put("chaosType", 1);
-                            kineticSequenceQueue.add(ks8);
-                            break;
-                        case 9:
-                            KineticSequence ks9 = new KineticSequence("runChaos", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean());
-                            ks9.map = new HashMap<>();
-                            ks9.map.put("chaosType", 2);
-                            kineticSequenceQueue.add(ks9);
-                            break;
-                        case 10:
-                            KineticSequence ks10 = new KineticSequence("runChaos", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean());
-                            ks10.map = new HashMap<>();
-                            ks10.map.put("chaosType", 3);
-                            kineticSequenceQueue.add(ks10);
-                            break;
-                        case 11:
-                            KineticSequence ks11 = new KineticSequence("runCheckerBoard", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean());
-                            ks11.map = new HashMap<>();
-                            ks11.map.put("orientation", true);
-                            kineticSequenceQueue.add(ks11);
-                            break;
-                        case 12:
-                            KineticSequence ks12 = new KineticSequence("runCheckerBoard", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean());
-                            ks12.map = new HashMap<>();
-                            ks12.map.put("orientation", false);
-                            kineticSequenceQueue.add(ks12);
-                            break;
-                        case 13:
-                            kineticSequenceQueue.add(new KineticSequence("runAllBloom", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
-                            break;
-                        case 14:
-                            KineticSequence ks14 = new KineticSequence("runHalf", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean());
-                            ks14.map = new HashMap<>();
-                            ks14.map.put("orientationNumber", randomGenerator.nextInt(5) + 2);
-                            kineticSequenceQueue.add(ks14);
-                            break;
-                        case 15:
-                            // Dinosaur foot
-                            KineticSequence ks151 = new KineticSequence("runHalf", false, false);
-                            KineticSequence ks152 = new KineticSequence("runHalf", false, true);
-                            ks152.started = true; // this should allow it to run straight after ks151
-                            ks151.map = new HashMap<>();
-                            ks152.map = new HashMap<>();
-                            switch (randomGenerator.nextInt(3)) {
-                                case 0:
-                                    ks151.map.put("orientationNumber", 2);
-                                    ks152.map.put("orientationNumber", 3);
-                                    break;
-                                case 1:
-                                    ks151.map.put("orientationNumber", 5);
-                                    ks152.map.put("orientationNumber", 2);
-                                    break;
-                                case 2:
-                                    ks151.map.put("orientationNumber", 6);
-                                    ks152.map.put("orientationNumber", 7);
-                                    break;
-                                case 3:
-                                    ks151.map.put("orientationNumber", 4);
-                                    ks152.map.put("orientationNumber", 7);
-                                    break;
-                            }
-                            kineticSequenceQueue.add(ks151);
-                            kineticSequenceQueue.add(ks152);
-                            break;
-                        case 16:
-                            kineticSequenceQueue.add(new KineticSequence("runStripes", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
-                            break;
-                        case 17:
-                            kineticSequenceQueue.add(new KineticSequence("runBands", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
-                            break;
+                if (danceTimes.peek() != null && System.currentTimeMillis() > danceTimes.peek().longValue()) { // If there is a dance in the queue and ...
+                    danceTimes.remove(); // remove element from queue
+                    ctrl.log("Starting new Dance");
+                    
+                    // fill the kinetic sequence queue
+                    for (int i = 0; i < 10; i++) {
+                        switch (randomGenerator.nextInt(numberOfStills - 1)) {
+                            case 0:
+                                kineticSequenceQueue.add(new KineticSequence("runRightDiagonals", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
+                                break;
+                            case 1:
+                                kineticSequenceQueue.add(new KineticSequence("runLeftDiagonals", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
+                                break;
+                            case 2:
+                                kineticSequenceQueue.add(new KineticSequence("runHorizontals", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
+                                break;
+                            case 3:
+                                kineticSequenceQueue.add(new KineticSequence("runBothDiagonals", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
+                                break;
+                            case 4:
+                                kineticSequenceQueue.add(new KineticSequence("runLeftDandH", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
+                                break;
+                            case 5:
+                                kineticSequenceQueue.add(new KineticSequence("runRightDandH", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
+                                break;
+                            case 6:
+                                kineticSequenceQueue.add(new KineticSequence("runBlank", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
+                                break;
+                            case 7:
+                                kineticSequenceQueue.add(new KineticSequence("runHugeTriangle", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
+                                break;
+                            case 8:
+                                KineticSequence ks8 = new KineticSequence("runChaos", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean());
+                                ks8.map = new HashMap<>();
+                                ks8.map.put("chaosType", 1);
+                                kineticSequenceQueue.add(ks8);
+                                break;
+                            case 9:
+                                KineticSequence ks9 = new KineticSequence("runChaos", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean());
+                                ks9.map = new HashMap<>();
+                                ks9.map.put("chaosType", 2);
+                                kineticSequenceQueue.add(ks9);
+                                break;
+                            case 10:
+                                KineticSequence ks10 = new KineticSequence("runChaos", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean());
+                                ks10.map = new HashMap<>();
+                                ks10.map.put("chaosType", 3);
+                                kineticSequenceQueue.add(ks10);
+                                break;
+                            case 11:
+                                KineticSequence ks11 = new KineticSequence("runCheckerBoard", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean());
+                                ks11.map = new HashMap<>();
+                                ks11.map.put("orientation", true);
+                                kineticSequenceQueue.add(ks11);
+                                break;
+                            case 12:
+                                KineticSequence ks12 = new KineticSequence("runCheckerBoard", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean());
+                                ks12.map = new HashMap<>();
+                                ks12.map.put("orientation", false);
+                                kineticSequenceQueue.add(ks12);
+                                break;
+                            case 13:
+                                kineticSequenceQueue.add(new KineticSequence("runAllBloom", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
+                                break;
+                            case 14:
+                                KineticSequence ks14 = new KineticSequence("runHalf", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean());
+                                ks14.map = new HashMap<>();
+                                ks14.map.put("orientationNumber", randomGenerator.nextInt(5) + 2);
+                                kineticSequenceQueue.add(ks14);
+                                break;
+                            case 15:
+                                // Dinosaur foot
+                                KineticSequence ks151 = new KineticSequence("runHalf", false, false);
+                                KineticSequence ks152 = new KineticSequence("runHalf", false, true);
+                                ks152.started = true; // this should allow it to run straight after ks151
+                                ks151.map = new HashMap<>();
+                                ks152.map = new HashMap<>();
+                                switch (randomGenerator.nextInt(3)) {
+                                    case 0:
+                                        ks151.map.put("orientationNumber", 2);
+                                        ks152.map.put("orientationNumber", 3);
+                                        break;
+                                    case 1:
+                                        ks151.map.put("orientationNumber", 5);
+                                        ks152.map.put("orientationNumber", 2);
+                                        break;
+                                    case 2:
+                                        ks151.map.put("orientationNumber", 6);
+                                        ks152.map.put("orientationNumber", 7);
+                                        break;
+                                    case 3:
+                                        ks151.map.put("orientationNumber", 4);
+                                        ks152.map.put("orientationNumber", 7);
+                                        break;
+                                }
+                                kineticSequenceQueue.add(ks151);
+                                kineticSequenceQueue.add(ks152);
+                                break;
+                            case 16:
+                                kineticSequenceQueue.add(new KineticSequence("runStripes", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
+                                break;
+                            case 17:
+                                kineticSequenceQueue.add(new KineticSequence("runBands", false, randomGenerator.nextBoolean() && randomGenerator.nextBoolean()));
+                                break;
+                        }
                     }
-                }
 
-            }
+                }
             }
             
             updateSensors();
 
+            /**
+             * React to sensors
+             * Queue a new sequence to the front of the queue
+             */
             if(!parked) {
-            // react to inputs
-            // maybe wait if a reaction has taken place
-            // react to sensors should queue a new sequence to the front of the queue
-//            if (System.currentTimeMillis() > (lastReactionTime + reactionTimeout) && numReactions <= reactionsPerHour && (kineticSequenceQueue.isEmpty() || !kineticSequenceQueue.peek().isReaction)) {
-            if (System.currentTimeMillis() > (lastReactionTime + reactionTimeout) && System.currentTimeMillis() > (timeTotemLastMoved + 10000) && (kineticSequenceQueue.isEmpty() || !kineticSequenceQueue.peek().isReaction)) {
-                reactToSensors();
-            }
+    //            if (System.currentTimeMillis() > (lastReactionTime + reactionTimeout) && numReactions <= reactionsPerHour && (kineticSequenceQueue.isEmpty() || !kineticSequenceQueue.peek().isReaction)) {
+                if (System.currentTimeMillis() > (lastReactionTime + reactionTimeout) && System.currentTimeMillis() > (timeTotemLastMoved + 10000) && (kineticSequenceQueue.isEmpty() || !kineticSequenceQueue.peek().isReaction)) {
+                    reactToSensors();
+                }
             }
 
-            // reset numReactions every hourish
-//            if (calendar.get(calendar.MINUTE) == 5 || calendar.get(calendar.HOUR_OF_DAY) == 5 ) {
-            if (calendar.get(calendar.MINUTE) == 1 && calendar.get(calendar.HOUR_OF_DAY) == 1 && numReactions != 0) { // resetting every 10 minutes for debugging
+            /**
+             * Reset numReactions every day
+             */ 
+            if (calendar.get(calendar.MINUTE) == 1 && calendar.get(calendar.HOUR_OF_DAY) == 1 && numReactions != 0) {
                 ctrl.log("Resetting Sensor Count");
                 reactionTimeout = 30000;
                 numReactions = 0;
             }
 
             if(!parked) {
-            // if it's been queueExecutionTimeout since queue execution then execute
-            // such a structure currently will not work well with moving sequences unless we put || head.started in the if clause
-            if (System.currentTimeMillis() > lastQueueExecutionTime + queueExecutionTimeout || (!kineticSequenceQueue.isEmpty() && (kineticSequenceQueue.peek().started || kineticSequenceQueue.peek().isReaction))) {
-                executeQueue();
-                lastQueueExecutionTime = System.currentTimeMillis();
-            }
-//            ctrl.log("numReactions = " + Integer.toString(numReactions));
-
+                // if it's been queueExecutionTimeout since queue execution then execute
+                // such a structure currently will not work well with moving sequences unless we put || head.started in the if clause
+                if (System.currentTimeMillis() > lastQueueExecutionTime + queueExecutionTimeout || (!kineticSequenceQueue.isEmpty() && (kineticSequenceQueue.peek().started || kineticSequenceQueue.peek().isReaction))) {
+                    executeQueue();
+                    lastQueueExecutionTime = System.currentTimeMillis();
+                }
+    //            ctrl.log("numReactions = " + Integer.toString(numReactions));
             }
             
             // Run this action roughly every 60 seconds.   
             if (System.currentTimeMillis() > sixtySecondTimer + 60000) {
                 sixtySecondTimer = System.currentTimeMillis();
                 if(parked) {
-                ctrl.log("RelayController is parked");
+                    ctrl.log("RelayController is parked");
                 }else {
                     ctrl.log("RelayController is running");
                 }
                 updateRelays();
             }
             
-            // Run this action roughly every 10 minutes.  
+            /**
+             * Contact Management is run every 10 minutes
+             */ 
             // TODO: Decide whether the if statement should check kineticSequenceQueue.peek().started
             if (System.currentTimeMillis() > tenMinuteTimer + 600000 && (kineticSequenceQueue.isEmpty() || !kineticSequenceQueue.peek().isReaction)) {
                 tenMinuteTimer = System.currentTimeMillis();
@@ -234,8 +251,7 @@ public class RelayController extends Thread {
     }
 
     /**
-     * Open a serial connection note: assumes databits=8, stopbits=1, no parity
-     * and no flow control.
+     * Open a serial connection note: assumes databits=8, stopbits=1, no parity and no flow control.
      */
     public SerialPort initializeSerial(String port, int baud, String programName) throws IOException {
         SerialPort serialPort;
@@ -255,7 +271,7 @@ public class RelayController extends Thread {
     }
 
     /**
-     * This method should create all triangles big and small and populate the
+     * This method should create all flowers and their corresponding petals and populate the
      * triangle / relay related tables.
      */
     static public void initializeFlowers() {
@@ -266,7 +282,7 @@ public class RelayController extends Thread {
         }
 
         // initialise the rest of the relayTable
-        // PSU's and unsed 7th relay
+        // PSU's and unused 7th relay
         for (int i = 0; i < 19; i++) {
             relayTable[i][0] = new Relay();
             relayTable[i][7] = new Relay();
@@ -277,6 +293,10 @@ public class RelayController extends Thread {
         }
     }
 
+    /**
+     * Write int i to the relayOutputStream (to the proXR cards)
+     * @param i 
+     */
     static public void send(int i) {
         try {
             relayOutputStream.write(i);
@@ -285,6 +305,7 @@ public class RelayController extends Thread {
         }
     }
 
+    
     static public void updateDanceTimes(Long[] times) {
         // in place of this for loop, danceTimes.addAll() can be used but requires times to be Long[] rather than long[]
 
@@ -297,8 +318,10 @@ public class RelayController extends Thread {
         }
     }
 
+    /**
+     * Look if the sensors array shows a triggered sensor then queue a reactive kinetic sequence
+     */
     static public void reactToSensors() {
-        // find if we had a triggered sensor and add it to an arraylist 
         ArrayList list = new ArrayList();
         for (int i = 0; i < 6; i++) {
 //            ctrl.log("Sensor " + Integer.toString(i) + " = " + Integer.toString(sensors[0][i]));
@@ -310,7 +333,7 @@ public class RelayController extends Thread {
             }
         }
 
-        // Should randomly choose a reaction sequence here
+        // If a sensor was triggered then randomly choose a reaction sequence
         if (list.size() > 0) {
             lastReactionTime = System.currentTimeMillis();
             numReactions++;
@@ -318,7 +341,7 @@ public class RelayController extends Thread {
             ctrl.log("Number of reactions so far today = " + Integer.toString(numReactions));
             int reactionSelect = randomGenerator.nextInt(3);
             KineticSequence ks = null;
-            boolean add = randomGenerator.nextBoolean();
+            boolean add = randomGenerator.nextBoolean() && randomGenerator.nextBoolean();
             switch (reactionSelect) {
                 case 0:
                     ks = new KineticSequence("runPetalPropogation", true, add);
@@ -350,13 +373,16 @@ public class RelayController extends Thread {
         try {
             int a = relayInputStream.available();
             numberBytesRead = relayInputStream.read(bytes);
-
         } catch (IOException ex) {
             ex.getMessage();
         }
         return numberBytesRead;
     }
 
+     /** 
+     * Sleep the tread for time milliseconds
+     * @param time 
+     */
     static public void sleep(int time) {
         try {
             Thread.currentThread().sleep(time);
@@ -377,6 +403,9 @@ public class RelayController extends Thread {
         }
     }
 
+    /**
+     * Toggle the state of all petals
+     */
     static public void invert() {
         for (int bank = 1; bank < 19; bank++) {
             for (int relay = 1; relay < 8; relay++) {
@@ -385,6 +414,9 @@ public class RelayController extends Thread {
         }
     }
 
+    /**
+     * Send the appropriate command to the ProXR relay controller to have the relays reflect their state in software
+     */
     static public void updateRelays() {
         for (int resend = 0; resend < 2; resend++) {
             for (int bank = 0; bank < 19; bank++) {
@@ -405,7 +437,9 @@ public class RelayController extends Thread {
         timeTotemLastMoved = System.currentTimeMillis();
     }
 
-    // Reads in sensor values and updates sensor table. 
+    /**
+     * Reads in sensor values and updates sensor table. 
+     */ 
     static public void updateSensors() {
         sleep(300);
         try {
@@ -436,10 +470,11 @@ public class RelayController extends Thread {
             
             //ctrl.log("Sensor " + Integer.toString(sensorNumber) + " = " + Integer.toString(hexToInt));
             
-            if(Math.abs(sensors[0][(int)((i-1)*0.5)]-hexToInt) > 10 && sensorNumber!=12) { // we consider the sensor state changed
+            // Test if the sensor state has changed
+            if(Math.abs(sensors[0][(int)((i-1)*0.5)]-hexToInt) > 10 && sensorNumber!=12) { 
                 sensors[0][(int)((i-1)*0.5)] = hexToInt;
                 sensors[1][(int)((i-1)*0.5)] = 1;
-            } else if (sensorNumber==12) {
+            } else if (sensorNumber==12) { // Average the wind speed sensor to the last 30 measurements
                 // trim list to size 30
                 while (windSpeeds.size() >= 30) {
                     windSpeeds.remove(0);
@@ -454,7 +489,6 @@ public class RelayController extends Thread {
                 average = average / windSpeeds.size();
                 // set sensor value to average
                 sensors[0][12] = average;
-
             } else {
                 sensors[1][sensorNumber] = 0;
             }
@@ -462,7 +496,13 @@ public class RelayController extends Thread {
         }
     }
     
-    // TODO: alter this method to put the power supplies back to their original state rather than turning them on.
+    /**
+     * Relay Contact Management turns off all power supplies except the one powering the relay coils
+     * then toggles the relay state 12 times in an attempt to reduce 'stuck' relays that weld together 
+     * during high inrush currents.
+     * 
+     * TODO: alter this method to put the power supplies back to their original state rather than turning them on.
+     */
     static public void relayContactManagement() {
         // turn off PSU's
         for (int bank = 1; bank < 19; bank++) {
@@ -485,59 +525,84 @@ public class RelayController extends Thread {
         updateRelays();
     }
 
+    /**
+     * Turn on all relays in a bank.
+     * @param bank 
+     */
     static public void turnOnBank(int bank) {
         for (int relayNumber = 1; relayNumber < 8; relayNumber++) {
             relayTable[bank][relayNumber].setState(true);
         }
     }
 
+    /**
+     * Turn off all relays in a bank.
+     * @param bank 
+     */
     static public void turnOffBank(int bank) {
         for (int relayNumber = 1; relayNumber < 8; relayNumber++) {
             relayTable[bank][relayNumber].setState(false);
         }
     }
     
+    /**
+     * Toggle the state of all relays in a bank.
+     * @param bank 
+     */
     static public void toggleBank(int bank) {
         for (int relayNumber = 1; relayNumber < 8; relayNumber++) {
             relayTable[bank][relayNumber].toggleState();
         }
     }
 
+    /**
+     * Open projection door.
+     */
     static public void openProjectionDoor() {
-        // open projection door
         ctrl.log("Opening projection door");
         relayTable[0][1].setState(true);
         updateRelays();
     }
 
+    /**
+     * Close projection door.
+     */
     static public void closeProjectionDoor() {
-        // close projection door
         ctrl.log("Closing projection door");
         relayTable[0][1].setState(false);
         updateRelays();
     }
 
+    /**
+     * Turn on projection door power supply.
+     */
     static public void turnOnProjectionDoorPower() {
-        // turn on projection door power supply
         ctrl.log("Turning on projection door power");
         relayTable[0][3].setState(true);
         updateRelays();
     }
 
+    /**
+     * turn on projection door power supply.
+     */
     static public void turnOffProjectionDoorPower() {
-        // turn on projection door power supply
         ctrl.log("Turning off projection door power");
         relayTable[0][3].setState(false);
         updateRelays();
     }
 
+    /**
+     * Turn on projection door power supply.
+     */
     static public void turnOnLasers() {
-        // turn on projection door power supply
         ctrl.log("Turning on lasers");
         relayTable[0][0].setState(true);
         updateRelays();
     }
 
+    /**
+     * Turn off lasers.
+     */
     static public void turnOffLasers() {
         ctrl.log("Turning off lasers");
         // turn on projection door power supply
@@ -558,6 +623,11 @@ public class RelayController extends Thread {
 //            
     }
 
+    /**
+     * Write a binary string to a bank, 0's represent off, 1's represent on
+     * @param bank
+     * @param number 
+     */
     static public void writeBinaryStringToBank(int bank, int number) {
         String binaryString = Integer.toBinaryString(number);
         for (int i = 0; i < binaryString.length(); i++) {
@@ -569,6 +639,12 @@ public class RelayController extends Thread {
         }
     }
 
+    /**
+     * Get petals adjacent to a petal
+     * @param flower
+     * @param petal
+     * @return adjacent petals
+     */
     static public ArrayList getAdjacentPetals(Flower flower, Petal petal) {
         ArrayList adjacent = new ArrayList();
 
@@ -631,10 +707,15 @@ public class RelayController extends Thread {
                     break;
             }
         }
-
         return adjacent;
     }
 
+    /**
+     * Get flowers adjacent to a given flower
+     * @param level
+     * @param flowerNumber
+     * @return flowers adjacent to a given flower
+     */
     static public ArrayList getAdjacentFlowers(int level, int flowerNumber) {
         ArrayList adjacent = new ArrayList();
         switch (flowerNumber) {
@@ -674,6 +755,12 @@ public class RelayController extends Thread {
         return adjacent;
     }
 
+    /**
+     * Given a petal, get the petal that shares it's longest edge in common
+     * @param flower
+     * @param petal
+     * @return 
+     */
     static public Petal getBeakPetal(Flower flower, Petal petal) {
         if ((flower.level == 2 && petal.orientation == 4) || (flower.level == 0 && petal.orientation == 5)) {
             return null;
@@ -735,6 +822,9 @@ public class RelayController extends Thread {
         updateRelays();
     }
 
+    /**
+     * Method takes the top sequence in the queue and runs its corresponding method
+     */
     static public void executeQueue() {
         KineticSequence head = kineticSequenceQueue.peek();
         if (head != null) {

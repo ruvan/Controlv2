@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package controlv2;
 
 import java.io.*;
@@ -9,7 +5,7 @@ import java.util.*;
 
 /**
  *
- * @author Tyrone
+ * @author Ruvan Muthu-Krishna
  */
 public class MIDIController extends Thread {
     
@@ -27,19 +23,25 @@ public class MIDIController extends Thread {
         this.rctrl = rctrl;
         this.justShutdown = justShutdown;
         if (!justShutdown) {
-        ctrl.log("Laser show initiating");
-        File midiFolder = new File("C:\\MIDI files");
-        File[] matchingFiles = midiFolder.listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                return name.startsWith("midi") && name.endsWith("txt");
-            }
-        });
-        Random randomGenerator = new Random();
-        MIDIFilePath = matchingFiles[randomGenerator.nextInt(matchingFiles.length)].getAbsolutePath();
-        ctrl.log("Laser show chosen: " + MIDIFilePath);
+            ctrl.log("Laser show initiating");
+            File midiFolder = new File("C:\\MIDI files");
+            File[] matchingFiles = midiFolder.listFiles(new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    return name.startsWith("midi") && name.endsWith("txt");
+                }
+            });
+            Random randomGenerator = new Random();
+            MIDIFilePath = matchingFiles[randomGenerator.nextInt(matchingFiles.length)].getAbsolutePath();
+            ctrl.log("Laser show chosen: " + MIDIFilePath);
         }
     }
     
+    /**
+     * Excute the Control.jar file with the chosen midi file as the argument.
+     * The control.jar file will play the midi file while this thread waits for it to finish execution.
+     * 
+     * TODO: Look at moving the functionality of control.jar into this codebase.
+     */
     public void run() {
         if (!justShutdown) {
             startup();
@@ -64,6 +66,9 @@ public class MIDIController extends Thread {
         
     }
     
+    /**
+     * Run the laser start up routine
+     */
     public void startup() {
         ctrl.laserShowRunning = true;
         rctrl.turnOnProjectionDoorPower();
@@ -74,6 +79,9 @@ public class MIDIController extends Thread {
         sleep(30000);
     }
     
+    /**
+     * Shut down the laser show by sending the 'stop' midi file to the laser computers
+     */
     public void shutdown() {
         ctrl.log("Shutting down laser show");
         ctrl.log("Running MIDI Stop File"); // run turn off midi
@@ -97,7 +105,10 @@ public class MIDIController extends Thread {
         ctrl.laserShowRunning = false;
     }
     
-    
+    /** 
+     * Sleep the tread for time milliseconds
+     * @param time 
+     */
     static public void sleep(int time) {
         try {
             Thread.currentThread().sleep(time);
