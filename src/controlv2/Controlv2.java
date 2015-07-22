@@ -127,7 +127,7 @@ public class Controlv2 {
                 }
                 
                 readCommandFile(); // Read the command file for any commands given by the GUI
-                
+                readShowsFile(false); //
                 respondToEnvironment(); // Respond to enviromental conditions
                 
                 // Only update the status file every 30 seconds.
@@ -320,10 +320,10 @@ public class Controlv2 {
 //// TODO: This method needs looking at / making functional 
     /**
      * Read shows.txt file, update todays laser show time and remove past entries
-     * Shows File entries are expected to be on seperate lines with one line format looking like
-     * DD/MM/YYY,HH:MM,HH:MM,HH:MM
-     * date, audience arrives, audience exits, laser show start time
-     * @param force 
+     * Shows File entries are expected to be on separate lines with one line format looking like
+     * DD/MM/YYY,HH:MM,HH:MM,HH:MM,Show_name
+     * date, audience arrives, audience exits, laser show start time, Show name
+     * @param force the shows file to be read regardless of the last modified time
      */
     static void readShowsFile(Boolean force) {
         
@@ -331,7 +331,7 @@ public class Controlv2 {
         long modifiedTime = new File(showsFileLoc).lastModified();
         
         if (modifiedTime > showsFileModTime || force) { 
-            showsFileModTime = modifiedTime;
+            showsFileModTime = modifiedTime; // Update the last modified time variable
  
             try {
                 // load the shows file
@@ -339,6 +339,7 @@ public class Controlv2 {
                 BufferedReader showsReader = new BufferedReader(new FileReader(shows));
                 String showLine;
                 
+                // Create a temporary shows file which will replace the current one once past dates have been removed
                 File tempFile = new File(tempShowsFileLoc);
                 BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
                 
@@ -356,7 +357,6 @@ public class Controlv2 {
                         int proposedHour = Integer.parseInt(laserTimes[0]);
                         int proposedMinute = Integer.parseInt(laserTimes[1]);
                         
-                         // TODO: Make provisions for the laserShow time to actually make the lasers not turn on or or there to be no lasers for shows -- functionality not to be implemented after talking to Geoffrey
                         // TODO: The time restrictions below should be in the interface not code.
                         if((proposedHour >= 20 && proposedMinute > 29) && (proposedHour <= 23 && proposedMinute < 31)) {
                             laserShowHour = proposedHour;
