@@ -95,9 +95,10 @@ if (!isset($_SESSION['authenticated']) || $_SESSION['authenticated'] != true) {
             
             // Set new numLines value
             form.elements["numLines"].value=numLines-1;
-            if(numLines==1){
-                addShow();
-            }
+            // These lines were causing the following line to be saved to the shows file ",,,,"
+            // if(numLines==1){ 
+            //    addShow();
+            //}
         }
         
         function validateForm() {
@@ -338,7 +339,7 @@ if ($_SESSION['userlevel'] == 2) {
 
 echo "</div></body></html>";
 
-// Function currently clears the comand file and writes one comand to line one.
+// Function currently clears the comand file and writes one command to line one.
 function send_command($command) {
     $commandFile = fopen("command.txt", "w") or exit("Unable to open conmmand file!");
     fwrite($commandFile, $command);

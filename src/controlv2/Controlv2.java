@@ -127,12 +127,13 @@ public class Controlv2 {
                 }
                 
                 readCommandFile(); // Read the command file for any commands given by the GUI
-                readShowsFile(false); //
+                
                 respondToEnvironment(); // Respond to enviromental conditions
                 
                 // Only update the status file every 30 seconds.
                 if(statusUpdateTimeout==0) {
                     updateStatus(); 
+                    readShowsFile(false); // 
                     statusUpdateTimeout=30;
                     log("Control is running");
                 } else {
@@ -318,6 +319,7 @@ public class Controlv2 {
     }
     
 //// TODO: This method needs looking at / making functional 
+    //// TODO: Add a log entry for laser show time updates
     /**
      * Read shows.txt file, update todays laser show time and remove past entries
      * Shows File entries are expected to be on separate lines with one line format looking like
