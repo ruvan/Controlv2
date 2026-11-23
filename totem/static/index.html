@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Totem control</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 1rem 2rem; }
+  header { display: flex; justify-content: space-between; align-items: center; }
+  main { display: flex; flex-wrap: wrap; gap: 2rem; align-items: flex-start; }
+  table { border-collapse: collapse; }
+  td, th { border: 1px solid #ccc; padding: .25rem .5rem; text-align: left; }
+  th { background: #f3f3f3; }
+  #relays td.bits { white-space: nowrap; }
+  #relays input { margin: 0 .2rem; }
+  .controls { margin-top: .5rem; display: flex; gap: .5rem; flex-wrap: wrap; }
+  #message { min-height: 1.2em; color: #555; }
+  .readonly .admin { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Totem control</h1>
+  <form action="/logout" method="post"><button type="submit">Log out</button></form>
+</header>
+<p id="message"></p>
+<main>
+  <section>
+    <h2>Status</h2>
+    <table><tbody id="status"></tbody></table>
+    <div class="controls admin">
+      <select id="sequence"></select>
+      <button id="run-sequence">Run sequence</button>
+      <button id="auto">Return to automatic</button>
+    </div>
+  </section>
+  <section>
+    <h2>Sensors</h2>
+    <table><thead><tr><th>Sensor</th><th>Reading</th></tr></thead><tbody id="sensors"></tbody></table>
+  </section>
+  <section>
+    <h2>Relays</h2>
+    <p>Bank 1: door, lasers, coil supply, door power. Banks 2-19: relay 0 is the PSU, relays 1-6 are petals.</p>
+    <table id="relays">
+      <thead><tr><th>Bank</th><th>Relays 0 &ndash; 7</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="controls admin">
+      <button id="set-relays">Manual override: set relays</button>
+      <button id="reload-relays">Discard edits</button>
+    </div>
+  </section>
+</main>
+<script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Totem control</title>
+<style>
+  body { font-family: system-ui, sans-serif; display: flex; justify-content: center; margin-top: 15vh; }
+  form { display: flex; gap: .5rem; flex-direction: column; min-width: 16rem; }
+  #error { color: #b00020; font-weight: bold; }
+</style>
+</head>
+<body>
+<form action="/login" method="post">
+  <h1>Totem control</h1>
+  <p id="error" hidden>Incorrect password</p>
+  <label>Password <input type="password" name="password" autofocus required></label>
+  <button type="submit">Log in</button>
+</form>
+<script src="/app.js"></script>
+</body>
+</html>
