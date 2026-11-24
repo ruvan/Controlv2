@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Totem · Sign in</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="login">
+  <form class="login-card" action="/login" method="post">
+    <div class="brand">
+      <img class="brand-mark" src="/favicon.svg" alt="">
+      <div>
+        <h1>Totem</h1>
+        <small>Kinetic sculpture control</small>
+      </div>
+    </div>
+    <p id="error" class="login-error" hidden>That password didn't work. Try again.</p>
+    <label class="field">
+      <span>Password</span>
+      <input type="password" name="password" autocomplete="current-password" autofocus required>
+    </label>
+    <button class="btn btn-primary" type="submit">Sign in</button>
+  </form>
+</div>
+<script src="/app.js"></script>
+</body>
+</html>

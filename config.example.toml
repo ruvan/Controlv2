@@ -1,0 +1,59 @@
+# Totem controller configuration. Copy to config.toml and adjust.
+
+program_name = "Totem"
+initial_mood = "Playful"
+
+[relay]
+# Serial port of the ProXR relay board ("COM2" on Windows, "/dev/ttyUSB0" on Linux).
+# Use "sim" to run without hardware.
+port = "COM2"
+baud = 38400
+# Keeps per-relay actuation counts across restarts (shown under Maintenance). Empty = off.
+stroke_log = 'C:\Controlv2\strokes.json'
+
+[schedule]
+start_of_day = 7        # hour the totem powers up
+end_of_day = 0          # hour it powers down (0 = midnight; wraps past midnight)
+dance_interval_minutes = 20
+dance_jitter_minutes = 3
+dance_length = 10       # stills per dance
+hold_seconds = 10.0     # how long each still is held
+step_seconds = 1.0      # time between steps of multi-step sequences
+
+[reactions]
+enabled = true
+motion_threshold = 254
+input_test_threshold = 64
+initial_cooldown_seconds = 30.0
+cooldown_seconds = 60.0
+per_hour = 24
+propagate_after_seconds = 4.0
+revert_after_seconds = 14.0
+
+[weather]
+# Retract and power down in wind or rain, and resume once it has stayed clear.
+# Off until calibrated: watch the readings on the control panel's Sensors card
+# in calm, dry weather and in wind/rain, then set thresholds between them.
+enabled = false
+wind_threshold = 1000   # either wind channel above this -> shelter
+rain_threshold = 1000   # rain channel above this -> shelter
+dark_threshold = 0      # light below this -> rest (0 = ignore light)
+clear_minutes = 15.0
+
+[laser]
+enabled = true
+start_time = "21:15"
+# "{midi}" is replaced by a random midi*.txt file from midi_dir.
+command = ['C:\Program Files\Java\jre7\bin\java.exe', "-jar", 'C:\Control.jar', "{midi}"]
+midi_dir = 'C:\Controlv2\midiFiles'
+working_dir = 'C:\'
+max_show_minutes = 30.0
+
+[web]
+enabled = true
+host = "0.0.0.0"
+port = 8080
+# Set real passwords here. If admin_password is empty a random one is generated
+# and printed in the log at startup. Leave viewer_password empty to disable it.
+admin_password = ""
+viewer_password = ""

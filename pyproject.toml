@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "totem"
+version = "3.0.0"
+description = "Controller for the Totem kinetic sculpture"
+requires-python = ">=3.11"
+dependencies = ["pyserial>=3.5"]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+totem = "totem.__main__:main"
+
+[tool.setuptools]
+packages = ["totem"]
+
+[tool.setuptools.package-data]
+totem = ["static/*"]
