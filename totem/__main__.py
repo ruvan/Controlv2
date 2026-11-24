@@ -25,6 +25,7 @@ def main(argv: list[str] | None = None) -> int:
         format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
     )
     log = logging.getLogger("totem")
+    log.setLevel(logging.DEBUG if args.verbose else logging.INFO)
 
     try:
         cfg = load_config(args.config)

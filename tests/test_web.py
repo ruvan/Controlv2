@@ -100,4 +100,22 @@ def test_pages_served(panel):
     status, body = call(client(base), base + "/")
     assert status == 200 and b"Password" in body
     status, body = call(client(base, "admin-pw"), base + "/")
-    assert status == 200 and b"Relays" in body
+    assert status == 200 and b"Live view" in body
+
+
+def test_layout_and_assets(panel):
+    engine, base = panel
+    admin = client(base, "admin-pw")
+    status, body = call(admin, base + "/api/layout")
+    flowers = json.loads(body)["flowers"]
+    assert status == 200 and len(flowers) == 36 and all(len(f["petals"]) == 3 for f in flowers)
+    assert call(client(base), base + "/api/layout")[0] == 401
+    for asset in ("/app.css", "/app.js", "/favicon.svg"):
+        assert call(client(base), base + asset)[0] == 200
+
+
+def test_laser_endpoint(panel):
+    engine, base = panel
+    assert call(client(base, "viewer-pw"), base + "/api/laser", {})[0] == 403
+    assert call(client(base, "admin-pw"), base + "/api/laser", {})[0] == 200
+    assert engine.commands.get_nowait() == ("laser", None)

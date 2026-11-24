@@ -8,7 +8,9 @@ different sources can never interleave on the wire.
 from __future__ import annotations
 
 import datetime as dt
+import json
 import logging
+import os
 import queue
 import random
 import threading
@@ -26,10 +28,44 @@ from .model import NUM_BANKS, Totem
 
 log = logging.getLogger(__name__)
 
+
+class RecentEvents(logging.Handler):
+    """Keeps the latest log messages so the control panel can show them."""
+
+    def __init__(self, size: int = 50):
+        super().__init__(logging.INFO)
+        self.records: deque[dict[str, str]] = deque(maxlen=size)
+        self.lock_ = threading.Lock()
+
+    def emit(self, record: logging.LogRecord) -> None:
+        entry = {
+            "time": dt.datetime.fromtimestamp(record.created).isoformat(timespec="seconds"),
+            "level": record.levelname.lower(),
+            "message": record.getMessage(),
+        }
+        with self.lock_:
+            self.records.append(entry)
+
+    def recent(self) -> list[dict[str, str]]:
+        with self.lock_:
+            return list(self.records)
+
+
+EVENTS = RecentEvents()
+_totem_log = logging.getLogger("totem")
+_totem_log.addHandler(EVENTS)
+if _totem_log.level == logging.NOTSET:
+    _totem_log.setLevel(logging.INFO)  # so the activity log works whatever the root level is
+
 AUTO = "auto"
 MANUAL = "manual"
 FULL_REFRESH_SECONDS = 60.0
 TICK_SECONDS = 0.1
+POWER_SEQUENCES = ("turn_on", "turn_off")
+STROKE_SAVE_SECONDS = 600.0
+WIND_CHANNELS = (6, 7)
+RAIN_CHANNEL = 8
+LIGHT_CHANNEL = 9
 SENSOR_INTERVAL_SECONDS = 0.5
 
 
@@ -103,6 +139,10 @@ class Engine:
         self.reactions_this_hour = 0
         self.reaction_cooldown = cfg.reactions.initial_cooldown_seconds
         self.current_hour: int | None = None
+        self.shelter: str | None = None  # reason automatic running is paused for the weather
+        self._clear_since: float | None = None
+        self._last_stroke_save = clock()
+        self._load_strokes()
 
         self._sent: list[int | None] = [None] * NUM_BANKS
         self._last_full_refresh = -1e12
@@ -125,9 +165,35 @@ class Engine:
 
     def run(self) -> None:
         self.startup()
-        while not self._stop.is_set():
-            self.tick()
-            self._stop.wait(TICK_SECONDS)
+        try:
+            while not self._stop.is_set():
+                self.tick()
+                self._stop.wait(TICK_SECONDS)
+        finally:
+            self.save_strokes()
+
+    # ---- stroke log ---------------------------------------------------------
+    def _load_strokes(self) -> None:
+        path = self.cfg.relay.stroke_log
+        if not path or not os.path.exists(path):
+            return
+        try:
+            with open(path, encoding="utf-8") as f:
+                self.totem.load_strokes(json.load(f)["strokes"])
+        except (OSError, ValueError, KeyError, TypeError):
+            log.exception("could not read stroke log %s; starting from zero", path)
+
+    def save_strokes(self) -> None:
+        path = self.cfg.relay.stroke_log
+        if not path:
+            return
+        tmp = f"{path}.tmp"
+        try:
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump({"saved": self.wall_clock().isoformat(timespec="seconds"), "strokes": self.totem.strokes()}, f)
+            os.replace(tmp, path)
+        except OSError:
+            log.exception("could not write stroke log %s", path)
 
     # ---- control loop --------------------------------------------------------
     def startup(self) -> None:
@@ -138,13 +204,17 @@ class Engine:
         now = self.clock()
         wall = self.wall_clock()
         self._process_commands()
+        self._read_sensors(now)
+        self._update_weather(now)
         self._update_day(wall)
         self._update_dances(wall)
         self._update_laser(wall, now)
-        self._read_sensors(now)
         self._maybe_react(now, wall)
         self._advance(now)
         self._flush(now)
+        if now >= self._last_stroke_save + STROKE_SAVE_SECONDS:
+            self._last_stroke_save = now
+            self.save_strokes()
         self._publish(wall)
 
     def enqueue(self, job: Job, urgent: bool = False) -> None:
@@ -201,6 +271,11 @@ class Engine:
                 # Power down; _update_day powers back up if we are within operating hours.
                 self.day_active = False
                 self.enqueue(Job("turn_off"))
+        elif command == "laser":
+            if self.background:
+                raise ValueError("laser show already running")
+            log.info("laser show started by hand")
+            self.background.append(Job("laser_show", gen=laser_show(self.totem, self.cfg.laser, self.rng), due=self.clock()))
         else:
             raise ValueError(f"unknown command {command}")
 
@@ -216,9 +291,9 @@ class Engine:
         if self.mode != AUTO:
             return
         s = self.cfg.schedule
-        active = in_operating_hours(wall.hour, s.start_of_day, s.end_of_day)
+        active = in_operating_hours(wall.hour, s.start_of_day, s.end_of_day) and self.shelter is None
         if active and not self.day_active:
-            log.info("start of day")
+            log.info("start of day" if self.shelter is None else "resuming")
             self.day_active = True
             self.enqueue(Job("turn_on"))
             self.dances = deque(
@@ -226,9 +301,13 @@ class Engine:
                     wall, s.start_of_day, s.end_of_day, s.dance_interval_minutes, s.dance_jitter_minutes, self.rng
                 )
             )
-            log.info("%d dances scheduled, last at %s", len(self.dances), self.dances[-1] if self.dances else "-")
+            log.info(
+                "%d dances scheduled, last at %s",
+                len(self.dances),
+                self.dances[-1].strftime("%H:%M") if self.dances else "-",
+            )
         elif not active and self.day_active:
-            log.info("end of day")
+            log.info("end of day" if self.shelter is None else f"sheltering: {self.shelter}")
             self.day_active = False
             self.dances.clear()
             self.clear_queue()
@@ -265,6 +344,35 @@ class Engine:
         if values is not None:
             self.sensors = values
 
+    def weather_problem(self) -> str | None:
+        wc = self.cfg.weather
+        if not wc.enabled:
+            return None
+        wind = max(self.sensors[c] for c in WIND_CHANNELS)
+        if wind > wc.wind_threshold:
+            return f"high wind ({wind})"
+        if self.sensors[RAIN_CHANNEL] > wc.rain_threshold:
+            return f"rain ({self.sensors[RAIN_CHANNEL]})"
+        if wc.dark_threshold and self.sensors[LIGHT_CHANNEL] < wc.dark_threshold:
+            return f"dark ({self.sensors[LIGHT_CHANNEL]})"
+        return None
+
+    def _update_weather(self, now: float) -> None:
+        """Retract and power down in wind or rain (or darkness); resume once it has stayed clear."""
+        problem = self.weather_problem()
+        if problem is not None:
+            if self.shelter is None:
+                log.warning("weather: %s", problem)
+            self.shelter = problem
+            self._clear_since = None
+        elif self.shelter is not None:
+            if self._clear_since is None:
+                self._clear_since = now
+            elif now >= self._clear_since + self.cfg.weather.clear_minutes * 60:
+                log.info("weather has cleared")
+                self.shelter = None
+                self._clear_since = None
+
     def _maybe_react(self, now: float, wall: dt.datetime) -> None:
         rc = self.cfg.reactions
         if not (rc.enabled and self.mode == AUTO and self.day_active):
@@ -272,8 +380,10 @@ class Engine:
         if now < self.last_reaction + self.reaction_cooldown or self.reactions_this_hour >= rc.per_hour:
             return
         head = self.head()
-        if head is not None and head.reaction:
-            return
+        if head is not None and (head.reaction or head.name in POWER_SEQUENCES):
+            return  # never interrupt another reaction or a power-up/power-down
+        if not self.totem.relays[1][0].state:
+            return  # petals are unpowered
         triggered = [i for i in range(6) if self.sensors[i] > rc.motion_threshold]
         if not triggered:
             return
@@ -337,18 +447,32 @@ class Engine:
 
     def _publish(self, wall: dt.datetime) -> None:
         head = self.head()
+        s = self.cfg.schedule
+        strokes = self.totem.strokes()
         status = {
             "time": wall.isoformat(timespec="seconds"),
             "mode": self.mode,
             "day_active": self.day_active,
+            "in_hours": in_operating_hours(wall.hour, s.start_of_day, s.end_of_day),
+            "hours": [s.start_of_day, s.end_of_day],
+            "shelter": self.shelter,
+            "weather_enabled": self.cfg.weather.enabled,
             "mood": self.cfg.initial_mood,
             "current_sequence": head.name if head else None,
-            "queue": [j.name for j in (*self.urgent, *self.normal)],
-            "next_dance": self.dances[0].isoformat(timespec="minutes") if self.dances else None,
+            "queue": [{"name": j.name, "reaction": j.reaction} for j in (*self.urgent, *self.normal)],
+            "next_dance": self.dances[0].isoformat(timespec="seconds") if self.dances else None,
+            "dances_left": len(self.dances),
+            "laser_enabled": self.cfg.laser.enabled,
+            "laser_time": self.cfg.laser.start_time.strftime("%H:%M"),
             "laser_show_running": bool(self.background),
             "reactions_this_hour": self.reactions_this_hour,
+            "reactions_per_hour": self.cfg.reactions.per_hour,
+            "motion_threshold": self.cfg.reactions.motion_threshold,
             "banks": self.totem.bank_values(),
             "sensors": list(self.sensors),
+            "bank_strokes": [sum(row) for row in strokes],
+            "strokes_total": sum(sum(row) for row in strokes),
+            "events": EVENTS.recent()[-20:],
         }
         with self._status_lock:
             self._status = status

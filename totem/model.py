@@ -62,6 +62,8 @@ class Petal:
     orientation: int
     slot: int
     flower: "Flower"
+    bank: int
+    column: int
     relay: Relay
 
 
@@ -73,7 +75,7 @@ class Flower:
         orientations = UP_PETALS if self.up else DOWN_PETALS
         column = number // 2 + 1
         self.petals = tuple(
-            Petal(o, slot, self, totem.relays[o + level * 6 - 1][column])
+            Petal(o, slot, self, o + level * 6 - 1, column, totem.relays[o + level * 6 - 1][column])
             for slot, o in enumerate(orientations)
         )
 
@@ -108,6 +110,29 @@ class Totem:
     def all_petals(self):
         for flower in self.all_flowers():
             yield from flower.petals
+
+    def layout(self) -> list[dict]:
+        """Static description of every flower and petal, for drawing the totem."""
+        return [
+            {
+                "level": f.level,
+                "number": f.number,
+                "up": f.up,
+                "petals": [
+                    {"orientation": p.orientation, "slot": p.slot, "bank": p.bank, "bit": p.column}
+                    for p in f.petals
+                ],
+            }
+            for f in self.all_flowers()
+        ]
+
+    def strokes(self) -> list[list[int]]:
+        return [[r.strokes for r in bank] for bank in self.relays]
+
+    def load_strokes(self, counts: list[list[int]]) -> None:
+        for bank, row in zip(self.relays, counts):
+            for relay, n in zip(bank, row):
+                relay.strokes = int(n)
 
     def flower(self, level: int, number: int) -> Flower:
         return self.flowers[level][number % FLOWERS_PER_LEVEL]

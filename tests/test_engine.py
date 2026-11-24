@@ -197,3 +197,74 @@ def test_decode_sensor_reply():
     data = bytes([0]) + b"".join(bytes([v & 0xFF, v >> 8]) for v in range(0, 1300, 100))
     assert decode_sensor_reply(data) == list(range(0, 1300, 100))
     assert decode_sensor_reply(data[:-1]) is None
+
+
+def test_weather_shelters_then_resumes():
+    eng, board, clocks = make_engine(weather__enabled=True, weather__wind_threshold=500, weather__clear_minutes=1.0)
+    run_for(eng, clocks, 30)
+    assert eng.day_active and eng.totem.relays[1][0].state
+    board.sensors[7] = 900  # wind 2
+    run_for(eng, clocks, 15)
+    assert eng.shelter and "wind" in eng.shelter
+    assert not eng.day_active and not eng.totem.relays[1][0].state  # retracted and powered down
+    board.sensors[0] = 1000  # no reactions while sheltering
+    run_for(eng, clocks, 5)
+    assert not any(j.reaction for j in eng.urgent)
+    board.sensors[0] = 0
+    board.sensors[7] = 100
+    run_for(eng, clocks, 30)
+    assert eng.shelter is None or not eng.day_active  # must stay clear for clear_minutes
+    run_for(eng, clocks, 60)
+    assert eng.shelter is None and eng.day_active
+    run_for(eng, clocks, 20)
+    assert eng.totem.relays[1][0].state
+
+
+def test_weather_ignored_when_disabled():
+    eng, board, clocks = make_engine()
+    board.sensors[8] = 4000
+    run_for(eng, clocks, 5)
+    assert eng.shelter is None and eng.day_active
+
+
+def test_strokes_persist(tmp_path):
+    log = tmp_path / "strokes.json"
+    eng, board, clocks = make_engine(relay__stroke_log=str(log))
+    run_for(eng, clocks, 60)
+    eng.save_strokes()
+    total = sum(map(sum, eng.totem.strokes()))
+    assert total > 0
+    eng2, _, _ = make_engine(relay__stroke_log=str(log))
+    assert sum(map(sum, eng2.totem.strokes())) == total
+
+
+def test_laser_command_starts_show():
+    eng, board, clocks = make_engine()
+    eng.submit("laser")
+    run_for(eng, clocks, 2)
+    assert eng.background and eng.status()["laser_show_running"]
+    eng.submit("laser")  # second request while running is refused, not duplicated
+    run_for(eng, clocks, 1)
+    assert len(eng.background) == 1
+
+
+def test_status_has_panel_fields():
+    eng, board, clocks = make_engine()
+    run_for(eng, clocks, 2)
+    s = eng.status()
+    for key in ("queue", "events", "strokes_total", "bank_strokes", "hours", "shelter", "next_dance"):
+        assert key in s
+    assert any("start of day" in e["message"] for e in s["events"])
+
+
+def test_reactions_wait_for_power_up():
+    # A reaction used to be able to jump ahead of the start-of-day power sequence,
+    # "running" while the petal power supplies were still off.
+    eng, board, clocks = make_engine()
+    board.sensors[2] = 1000
+    run_for(eng, clocks, 5)
+    assert not any(j.reaction for j in eng.urgent)
+    assert eng.head().name in ("turn_off", "turn_on")
+    run_for(eng, clocks, 30)
+    assert eng.totem.relays[1][0].state
+    assert eng.reactions_this_hour == 1

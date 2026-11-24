@@ -85,6 +85,13 @@ def parse_override(body: object) -> dict[int, int]:
     return dict(enumerate(banks))
 
 
+def _group(name: str) -> str:
+    for group, names in sequences.GROUPS.items():
+        if name in names:
+            return group
+    return "Patterns"
+
+
 def _page(name: str) -> bytes:
     return resources.files(__package__).joinpath("static", name).read_bytes()
 
@@ -112,7 +119,7 @@ def make_handler(engine: Engine, cfg: WebConfig, sessions: Sessions):
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Frame-Options", "DENY")
             self.send_header("X-Content-Type-Options", "nosniff")
-            self.send_header("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline'")
+            self.send_header("Content-Security-Policy", "default-src 'self'; img-src 'self' data:")
             for k, v in (headers or {}).items():
                 self.send_header(k, v)
             self.end_headers()
@@ -138,6 +145,14 @@ def make_handler(engine: Engine, cfg: WebConfig, sessions: Sessions):
                 self._send(HTTPStatus.OK, _page("index.html" if role else "login.html"), "text/html; charset=utf-8")
             elif path == "/app.js":
                 self._send(HTTPStatus.OK, _page("app.js"), "text/javascript; charset=utf-8")
+            elif path == "/app.css":
+                self._send(HTTPStatus.OK, _page("app.css"), "text/css; charset=utf-8")
+            elif path == "/favicon.svg":
+                self._send(HTTPStatus.OK, _page("favicon.svg"), "image/svg+xml")
+            elif path == "/api/layout":
+                if not role:
+                    return self._json(HTTPStatus.UNAUTHORIZED, {"error": "not logged in"})
+                self._json(HTTPStatus.OK, {"flowers": engine.totem.layout()})
             elif path == "/api/status":
                 if not role:
                     return self._json(HTTPStatus.UNAUTHORIZED, {"error": "not logged in"})
@@ -148,7 +163,8 @@ def make_handler(engine: Engine, cfg: WebConfig, sessions: Sessions):
                         "role": role,
                         "sensor_labels": SENSOR_LABELS,
                         "sequences": [
-                            {"name": n, "label": label} for n, (label, _) in sequences.REGISTRY.items()
+                            {"name": n, "label": label, "group": _group(n)}
+                            for n, (label, _) in sequences.REGISTRY.items()
                         ],
                     },
                 )
@@ -194,6 +210,10 @@ def make_handler(engine: Engine, cfg: WebConfig, sessions: Sessions):
                     engine.submit("sequence", name)
                 elif self.path == "/api/auto":
                     engine.submit("auto")
+                elif self.path == "/api/laser":
+                    if engine.status().get("laser_show_running"):
+                        raise ValueError("laser show already running")
+                    engine.submit("laser")
                 else:
                     return self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
             except (ValueError, json.JSONDecodeError) as exc:

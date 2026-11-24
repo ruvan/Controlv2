@@ -3,54 +3,150 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Totem control</title>
-<style>
-  body { font-family: system-ui, sans-serif; margin: 1rem 2rem; }
-  header { display: flex; justify-content: space-between; align-items: center; }
-  main { display: flex; flex-wrap: wrap; gap: 2rem; align-items: flex-start; }
-  table { border-collapse: collapse; }
-  td, th { border: 1px solid #ccc; padding: .25rem .5rem; text-align: left; }
-  th { background: #f3f3f3; }
-  #relays td.bits { white-space: nowrap; }
-  #relays input { margin: 0 .2rem; }
-  .controls { margin-top: .5rem; display: flex; gap: .5rem; flex-wrap: wrap; }
-  #message { min-height: 1.2em; color: #555; }
-  .readonly .admin { display: none; }
-</style>
+<meta name="color-scheme" content="dark light">
+<title>Totem</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/app.css">
 </head>
 <body>
-<header>
-  <h1>Totem control</h1>
-  <form action="/logout" method="post"><button type="submit">Log out</button></form>
+<header class="topbar">
+  <div class="brand">
+    <img class="brand-mark" src="/favicon.svg" alt="">
+    <div>
+      <h1>Totem</h1>
+      <small>Kinetic sculpture control</small>
+    </div>
+  </div>
+  <div class="top-actions">
+    <span id="pill-mode" class="pill"><span class="dot"></span><span>Connecting…</span></span>
+    <span id="pill-state" class="pill" hidden><span class="dot"></span><span></span></span>
+    <span id="clock" class="clock"></span>
+    <button id="auto" class="btn btn-primary btn-sm admin-only" hidden>Resume automatic</button>
+    <form action="/logout" method="post"><button class="btn btn-ghost btn-sm" type="submit">Sign out</button></form>
+  </div>
 </header>
-<p id="message"></p>
+
 <main>
-  <section>
-    <h2>Status</h2>
-    <table><tbody id="status"></tbody></table>
-    <div class="controls admin">
-      <select id="sequence"></select>
-      <button id="run-sequence">Run sequence</button>
-      <button id="auto">Return to automatic</button>
+  <!-- Live totem -->
+  <section class="card wide" id="totem-card">
+    <div class="card-head">
+      <h2>Live view</h2>
+      <span class="spacer"></span>
+      <div class="segmented admin-only" role="group" aria-label="View mode">
+        <button id="view-live" aria-pressed="true">Live</button>
+        <button id="view-edit" aria-pressed="false">Edit pattern</button>
+      </div>
+    </div>
+    <div class="totem-wrap">
+      <svg id="totem" viewBox="-20 -20 690 330" role="img" aria-label="Petal states of the totem"></svg>
+    </div>
+    <div class="legend">
+      <span><i class="swatch on"></i>Open</span>
+      <span><i class="swatch off"></i>Closed</span>
+      <span><i class="swatch sensor"></i>Motion detected</span>
+      <span class="spacer"></span>
+      <span class="hint">The ring wraps around: the left and right ends meet.</span>
+    </div>
+    <div id="edit-bar" class="edit-bar" hidden>
+      <span class="hint">Click petals to open or close them, then apply. Applying pauses automatic mode.</span>
+      <button class="btn btn-sm" data-edit="clear">Close all</button>
+      <button class="btn btn-sm" data-edit="all">Open all</button>
+      <button class="btn btn-sm" data-edit="invert">Invert</button>
+      <button class="btn btn-sm btn-ghost" data-edit="cancel">Cancel</button>
+      <button class="btn btn-sm btn-primary" data-edit="apply">Apply pattern</button>
     </div>
   </section>
-  <section>
-    <h2>Sensors</h2>
-    <table><thead><tr><th>Sensor</th><th>Reading</th></tr></thead><tbody id="sensors"></tbody></table>
-  </section>
-  <section>
-    <h2>Relays</h2>
-    <p>Bank 1: door, lasers, coil supply, door power. Banks 2-19: relay 0 is the PSU, relays 1-6 are petals.</p>
-    <table id="relays">
-      <thead><tr><th>Bank</th><th>Relays 0 &ndash; 7</th></tr></thead>
-      <tbody></tbody>
-    </table>
-    <div class="controls admin">
-      <button id="set-relays">Manual override: set relays</button>
-      <button id="reload-relays">Discard edits</button>
+
+  <!-- Now playing -->
+  <section class="card">
+    <div class="card-head"><h2>Now playing</h2></div>
+    <div class="now-name" id="now-name">—</div>
+    <div class="now-sub" id="now-sub"></div>
+    <div class="queue" id="queue"></div>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Next dance</div>
+        <div class="stat-value" id="next-dance">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Dances left today</div>
+        <div class="stat-value" id="dances-left">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Operating hours</div>
+        <div class="stat-value" id="hours">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Reactions this hour</div>
+        <div class="stat-value" id="reactions">—</div>
+        <div class="meter"><i id="reactions-meter"></i></div>
+      </div>
     </div>
+  </section>
+
+  <!-- Sequences -->
+  <section class="card wide admin-only">
+    <div class="card-head">
+      <h2>Sequences</h2>
+      <span class="spacer"></span>
+      <span class="hint">Running one pauses automatic mode</span>
+    </div>
+    <div id="sequences"></div>
+  </section>
+
+  <!-- Sensors -->
+  <section class="card">
+    <div class="card-head">
+      <h2>Sensors</h2>
+      <span class="spacer"></span>
+      <span class="hint" id="weather-mode"></span>
+    </div>
+    <div class="motion" id="motion"></div>
+    <div class="weather" id="weather"></div>
+  </section>
+
+  <!-- Hardware -->
+  <section class="card">
+    <div class="card-head"><h2>Hardware</h2></div>
+    <div class="switch-list" id="switches"></div>
+    <div class="laser-box">
+      <div class="name">
+        <b>Laser show</b>
+        <small id="laser-info">—</small>
+      </div>
+      <button id="laser" class="btn btn-sm admin-only">Start now</button>
+    </div>
+  </section>
+
+  <!-- Activity -->
+  <section class="card">
+    <div class="card-head"><h2>Activity</h2></div>
+    <ul class="log" id="log"></ul>
+  </section>
+
+  <!-- Maintenance -->
+  <section class="card">
+    <div class="card-head"><h2>Maintenance</h2></div>
+    <div class="stat">
+      <div class="stat-label">Relay actuations</div>
+      <div class="stat-value" id="strokes">—</div>
+    </div>
+    <div class="heat" id="heat" aria-label="Actuations per bank"></div>
+    <div class="heat-axis"><span>Bank 1</span><span>Bank 19</span></div>
+  </section>
+
+  <!-- Raw relays -->
+  <section class="card full">
+    <details class="advanced">
+      <summary>Advanced: raw relay banks</summary>
+      <p class="hint">Bank 1 is the control bank. On banks 2–19, relay 0 (dashed) is the power supply and relays 1–6 are petals.
+        <span class="admin-only">Changes here are staged with the pattern editor; apply them from the live view.</span></p>
+      <div class="relay-grid" id="relay-grid"></div>
+    </details>
   </section>
 </main>
+
+<div id="toasts" aria-live="polite"></div>
 <script src="/app.js"></script>
 </body>
 </html>

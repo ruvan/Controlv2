@@ -8,6 +8,8 @@ initial_mood = "Playful"
 # Use "sim" to run without hardware.
 port = "COM2"
 baud = 38400
+# Keeps per-relay actuation counts across restarts (shown under Maintenance). Empty = off.
+stroke_log = 'C:\Controlv2\strokes.json'
 
 [schedule]
 start_of_day = 7        # hour the totem powers up
@@ -27,6 +29,16 @@ cooldown_seconds = 60.0
 per_hour = 24
 propagate_after_seconds = 4.0
 revert_after_seconds = 14.0
+
+[weather]
+# Retract and power down in wind or rain, and resume once it has stayed clear.
+# Off until calibrated: watch the readings on the control panel's Sensors card
+# in calm, dry weather and in wind/rain, then set thresholds between them.
+enabled = false
+wind_threshold = 1000   # either wind channel above this -> shelter
+rain_threshold = 1000   # rain channel above this -> shelter
+dark_threshold = 0      # light below this -> rest (0 = ignore light)
+clear_minutes = 15.0
 
 [laser]
 enabled = true

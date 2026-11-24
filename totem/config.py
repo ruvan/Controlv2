@@ -13,6 +13,8 @@ class RelayConfig:
     # Serial port name, e.g. "COM2" or "/dev/ttyUSB0". "sim" uses a simulated board.
     port: str = "sim"
     baud: int = 38400
+    # JSON file where per-relay stroke (actuation) counts are kept across restarts. Empty = off.
+    stroke_log: str = ""
 
 
 @dataclass
@@ -36,6 +38,16 @@ class ReactionConfig:
     per_hour: int = 24
     propagate_after_seconds: float = 4.0
     revert_after_seconds: float = 14.0
+
+
+@dataclass
+class WeatherConfig:
+    # Off by default: set the thresholds from real readings shown in the control panel first.
+    enabled: bool = False
+    wind_threshold: int = 1000  # either wind channel above this -> shelter
+    rain_threshold: int = 1000  # rain channel above this -> shelter
+    dark_threshold: int = 0  # light channel below this -> rest; 0 disables
+    clear_minutes: float = 15.0  # conditions must stay clear this long before resuming
 
 
 @dataclass
@@ -65,8 +77,12 @@ class Config:
     relay: RelayConfig = field(default_factory=RelayConfig)
     schedule: ScheduleConfig = field(default_factory=ScheduleConfig)
     reactions: ReactionConfig = field(default_factory=ReactionConfig)
+    weather: WeatherConfig = field(default_factory=WeatherConfig)
     laser: LaserConfig = field(default_factory=LaserConfig)
     web: WebConfig = field(default_factory=WebConfig)
+
+
+SECTIONS = ("relay", "schedule", "reactions", "weather", "laser", "web")
 
 
 class ConfigError(ValueError):
@@ -102,14 +118,12 @@ def load_config(path: str | Path) -> Config:
         data = tomllib.load(f)
     cfg = Config()
     _apply(cfg, data, "top level")
-    for name in ("relay", "schedule", "reactions", "laser", "web"):
+    for name in SECTIONS:
         if name in data:
             if not isinstance(data[name], dict):
                 raise ConfigError(f"[{name}] must be a table")
             _apply(getattr(cfg, name), data[name], name)
-    unknown = {k for k, v in data.items() if isinstance(v, dict)} - {
-        "relay", "schedule", "reactions", "laser", "web"
-    }
+    unknown = {k for k, v in data.items() if isinstance(v, dict)} - set(SECTIONS)
     if unknown:
         raise ConfigError(f"unknown config section(s): {', '.join(sorted(unknown))}")
     validate(cfg)

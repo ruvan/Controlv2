@@ -55,11 +55,50 @@ def test_propagation_reaches_everything_and_returns_to_start(name, seed):
     assert all(p.relay.strokes >= 2 and p.relay.strokes % 2 == 0 for p in ctx.totem.all_petals())
 
 
-def test_beaks_propagation_no_longer_aborts_after_one_step():
-    # runBeaksPropogation ran one step of petal propagation then marked itself
-    # finished, leaving petals stuck open. It is now petal propagation proper.
-    assert "beaks_propagation" not in sequences.REGISTRY
-    assert "petal_propagation" in sequences.REACTIONS
+def test_beaks_propagation_ripples_whole_beaks():
+    # runBeaksPropogation was unfinished: it ran one step of petal propagation
+    # and marked itself finished, leaving petals stuck open.
+    ctx, clock = make_ctx()
+    units = sequences.beaks(ctx.totem)
+    assert sorted(len(u) for u in units).count(1) == 12  # outer edges
+    assert sum(len(u) for u in units) == 108
+    gen = sequences.create("beaks_propagation", ctx, {"sensors": [1]})
+    next(gen)
+    for unit in units:  # both petals of a beak always move together
+        assert len({p.relay.state for p in unit}) == 1
+    run(gen, clock)
+    assert not any(p.relay.state for p in ctx.totem.all_petals())
+    assert all(p.relay.strokes == 2 for p in ctx.totem.all_petals())
+
+
+@pytest.mark.parametrize("tip", range(12))
+def test_huge_triangle_is_a_solid_side_three_triangle(tip):
+    ctx, clock = make_ctx()
+    rows = sequences.big_triangle_flowers(ctx.totem, tip)
+    assert [len(r) for r in rows] == [1, 3, 5]
+    flowers = [f for r in rows for f in r]
+    assert len({id(f) for f in flowers}) == 9
+    # Tip and the outer flowers of each row point the same way as the big triangle.
+    up = tip % 2 == 0
+    assert rows[0][0].up is up
+    assert all(r[0].up is up and r[-1].up is up for r in rows)
+    # Flowers in a row are side by side, and every flower pointing the same way as
+    # the big triangle sits on (or hangs from) a flower in the next row.
+    for row in rows:
+        for a, b in zip(row, row[1:]):
+            assert b in ctx.totem.adjacent_flowers(a)
+    for upper, lower in zip(rows, rows[1:]):
+        for f in upper:
+            if f.up is up:
+                assert ctx.totem.beak_partner(f.petals[0]).flower in lower
+    # It is drawn from the tip outwards and ends fully open.
+    gen = sequences.create("huge_triangle", ctx, {"tip": tip})
+    next(gen)
+    assert rows[0][0].in_bloom and not any(f.in_bloom for f in rows[2])
+    run(gen, clock)
+    open_flowers = {id(f) for f in ctx.totem.all_flowers() if f.in_bloom}
+    assert open_flowers == {id(f) for f in flowers}
+    assert sum(p.relay.state for p in ctx.totem.all_petals()) == 27
 
 
 def test_random_still_can_pick_every_option():

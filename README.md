@@ -22,6 +22,13 @@ The control panel is served on `http://<host>:8080/` (configurable). The
 admin password gives full control. The optional viewer password gives read-only
 status. If no admin password is configured, a random one is printed in the log.
 
+The panel shows a live drawing of all 108 petals and the six motion sensors. It
+also has the current sequence and queue, sensor readings, hardware switches, the
+laser show, an activity log and actuation counts for maintenance. Admins can
+draw a pattern by clicking petals (**Edit pattern**), run any sequence, switch
+control relays, or start the laser show. It follows the system light/dark
+setting and works on phones.
+
 ## How it behaves
 
 * **Operating hours** (`start_of_day` to `end_of_day`, which may wrap past
@@ -30,6 +37,9 @@ status. If no admin password is configured, a random one is printed in the log.
 * **Reactions**: when a motion sensor fires, a petal or bloom ripple spreads out
   from the flower above it. Reactions interrupt the current dance, which then
   resumes. They are rate-limited by a cooldown and a per-hour cap.
+* **Weather** (off until calibrated, see `[weather]` in the config): in high
+  wind or rain the totem retracts and powers down. It resumes once conditions
+  have stayed clear for `clear_minutes`.
 * **Outside hours**: all petals retract, then the power supplies switch off.
   The totem does not react to sensors.
 * **Laser show**: at `laser.start_time` the projection door opens, the lasers
